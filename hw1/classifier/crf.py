@@ -2,12 +2,10 @@
 Wrapper for conditional random field classifier
 """
 
+import joblib
 import sklearn_crfsuite
 
 from .base import BaseClassifier
-from utils.data_converter import append_column, data_to_output
-import utils.conlleval as conlleval
-import joblib
 
 
 class CRFClassifier(BaseClassifier):
@@ -22,27 +20,20 @@ class CRFClassifier(BaseClassifier):
         self.params = params
 
         self.model = sklearn_crfsuite.CRF(algorithm='lbfgs',
-                                        c1=0.1,
-                                        c2=0.1,
-                                        max_iterations=100,
-                                        all_possible_transitions=True,
-                                        verbose=verbose)
+                                          c1=0.1,
+                                          c2=0.1,
+                                          max_iterations=100,
+                                          all_possible_transitions=True,
+                                          verbose=verbose)
 
     def fit(self, train_sentences, val_sentences):
         x_train, y_train = self.feature_extractor(train_sentences)
         x_val, y_val = self.feature_extractor(val_sentences)
         self.model.fit(x_train, y_train, x_val, y_val)
 
-    def evaluate(self, sentences):
-        y_pred = self.predict(sentences)
-        new_sents = append_column(sentences, y_pred)
-        return conlleval.evaluate(data_to_output(new_sents))
-
-
     def predict(self, sentences):
         x, _ = self.feature_extractor(sentences)
         return self.model.predict(x)
-
 
     def save_checkpoint(self, checkpoint_path):
         joblib.dump(self.model, checkpoint_path)

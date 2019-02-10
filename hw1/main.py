@@ -1,6 +1,6 @@
 from utils.data_converter import read_data
 from classifier import CRFClassifier
-from feature.manual import manual_feature_extractor
+from utils.feature.manual import manual_feature_extractor
 
 def main_parser():
     import argparse
