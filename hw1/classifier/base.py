@@ -7,7 +7,7 @@ from utils.data_converter import append_column, data_to_output
 
 
 class BaseClassifier(object):
-    def fit(self, train_sentences, test_sentences):
+    def fit(self, train_sentences, test_sentences, num_epoch, verbose):
         """ To be consistent, these data needs to be raw data. It's the classifier's job
             to split train/val and perform feature extraction and preprocessing
         """
@@ -16,7 +16,8 @@ class BaseClassifier(object):
     def evaluate(self, sentences):
         y_pred = self.predict(sentences)
         new_sents = append_column(sentences, y_pred)
-        return conlleval.evaluate(data_to_output(new_sents))
+        precision, recall, f1_score = conlleval.evaluate(data_to_output(new_sents))
+        return precision, recall, f1_score
 
     def predict(self, sentences):
         raise NotImplementedError

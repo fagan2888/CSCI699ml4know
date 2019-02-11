@@ -2,12 +2,16 @@
 Glove and BERT features
 """
 
+import os
+import pickle
+
 import numpy as np
 from keras.preprocessing.sequence import pad_sequences
+from keras.utils.np_utils import to_categorical
 from tqdm import tqdm
 
 from .common import UNKNOWN, PAD, MAX_LEN
-from .common import sent2token_index, sent2labels_index
+from .common import sent2token_index, sent2labels_index, sent2pos_index
 
 glove_total = 400000
 
@@ -22,6 +26,13 @@ def load_glove6B(dimension=50):
 
     """
     glove_file = 'pretrain/glove.6B/glove.6B.{}d.txt'.format(dimension)
+    pickle_file = 'pretrain/glove.6B/glove.6B.{}d.pkl'.format(dimension)
+    if os.path.isfile(pickle_file):
+        with open(pickle_file, 'rb') as f:
+            model = pickle.load(f)
+            print('Successfully load {}'.format(pickle_file))
+            return model
+
     average_embedding = 0
     try:
         with open(glove_file, 'r') as f:
@@ -43,6 +54,9 @@ def load_glove6B(dimension=50):
     average_embedding = average_embedding / glove_total
     model[UNKNOWN] = average_embedding
     model[PAD] = np.zeros_like(average_embedding)
+
+    with open(pickle_file, 'wb') as f:
+        pickle.dump(model, f)
 
     return model
 
@@ -82,31 +96,35 @@ def build_embedding_matrix(embedding_model, vocab, verbose=False):
     return embedding_matrix
 
 
-def make_word_embedding_feature_extractor(word_index, labels_index):
+def make_word_embedding_feature_extractor(word_index, labels_index, pos_index):
     def word_embedding_feature_extractor(sentences):
         """ It translate words into index and pad into the same length using PAD
 
         Args:
             sentences: a list of sentence (a list of tuple with (word, pos, tag))
 
-        Returns: (word_index, additional_feature, tag)
+        Returns: (word_index, additional_feature, tag, mask)
 
         """
         X = [sent2token_index(s, word_index) for s in sentences]
-        word_tuple_length = sentences[0][0]
-        if len(word_tuple_length) == 3:
+        word_tuple = sentences[0][0]
+        if len(word_tuple) == 3:
             y = [sent2labels_index(s, labels_index) for s in sentences]
-        elif len(word_tuple_length) == 2:
+        elif len(word_tuple) == 2:
             y = None
         else:
             raise ValueError(
                 'Each word in sent must be (token, postag, label) or (token postag), but got length {}'.format(
-                    word_tuple_length))
+                    len(word_tuple)))
 
+        pos = [sent2pos_index(s, pos_index) for s in sentences]
         # pad sequence
         X = pad_sequences(X, maxlen=MAX_LEN, padding='post', truncating='post', value=word_index[PAD])
+        pos_feature = pad_sequences(pos, maxlen=MAX_LEN, padding='post', truncating='post', value=pos_index['XX'])
+        pos_feature = to_categorical(pos_feature, len(pos_index))
         y = pad_sequences(y, maxlen=MAX_LEN, padding='post', truncating='post', value=-1)
 
-        return X, None, y
+        sentence_length = [len(s) for s in sentences]
+        return X, pos_feature, y, sentence_length
 
     return word_embedding_feature_extractor

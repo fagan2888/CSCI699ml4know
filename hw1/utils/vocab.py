@@ -7,21 +7,24 @@ Utilities for building vocabulary for onto dataset. We need to return the follow
 
 """
 
-from utils.feature.common import sent2tokens, sent2labels
+from utils.feature.common import sent2tokens, sent2labels, sent2pos
 
 from .feature.common import UNKNOWN, PAD
 
 
 def build_vocab(sentences):
-    training_data = sentences
-    training_sentences = [sent2tokens(sent) for sent in training_data]
+    training_sentences = [sent2tokens(sent) for sent in sentences]
     vocab = sorted(list({token for sent in training_sentences for token in sent}))
     vocab.insert(0, UNKNOWN)
     vocab.insert(0, PAD)
     word_index = {word: i for i, word in enumerate(vocab)}
 
-    training_labels = [sent2labels(sent) for sent in training_data]
-    labels = sorted(list({label for sent in training_labels for label in sent}))
-    labels_index = {label: i for i, label in enumerate(labels)}
+    training_labels = [sent2labels(sent) for sent in sentences]
+    all_labels = sorted(list({label for sent in training_labels for label in sent}))
+    labels_index = {label: i for i, label in enumerate(all_labels)}
 
-    return vocab, word_index, labels, labels_index
+    pos_data = [sent2pos(sent) for sent in sentences]
+    all_pos = sorted(list({pos for sent in pos_data for pos in sent}))
+    pos_index = {pos: i for i, pos in enumerate(all_pos)}
+
+    return vocab, word_index, all_labels, labels_index, all_pos, pos_index

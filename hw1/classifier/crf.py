@@ -9,7 +9,7 @@ from .base import BaseClassifier
 
 
 class CRFClassifier(BaseClassifier):
-    def __init__(self, feature_extractor, params, verbose=False):
+    def __init__(self, feature_extractor, params):
         """
 
         Args:
@@ -19,17 +19,19 @@ class CRFClassifier(BaseClassifier):
         self.feature_extractor = feature_extractor
         self.params = params
 
-        self.model = sklearn_crfsuite.CRF(algorithm='lbfgs',
-                                          c1=0.1,
-                                          c2=0.1,
-                                          max_iterations=100,
-                                          all_possible_transitions=True,
-                                          verbose=verbose)
+        self.model = None
 
-    def fit(self, train_sentences, val_sentences):
+    def fit(self, train_sentences, val_sentences, num_epoch, verbose=False):
         x_train, y_train = self.feature_extractor(train_sentences)
         x_val, y_val = self.feature_extractor(val_sentences)
-        self.model.fit(x_train, y_train, x_val, y_val)
+        model = sklearn_crfsuite.CRF(algorithm='lbfgs',
+                                     c1=0.1,
+                                     c2=0.1,
+                                     max_iterations=num_epoch,
+                                     all_possible_transitions=True,
+                                     verbose=verbose)
+        model.fit(x_train, y_train, x_val, y_val)
+        self.model = model
 
     def predict(self, sentences):
         x, _ = self.feature_extractor(sentences)

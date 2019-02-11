@@ -7,7 +7,7 @@ def create_tensor_dataset(data):
     return TensorDataset(*tensor_data)
 
 
-def create_data_loader(data, batch_size=32, enable_cuda=False):
+def create_data_loader(data, batch_size=32, enable_cuda=False, shuffle=False):
     """ Create a data loader given numpy array x and y
     Args:
         data: a tuple (x, y, z, ...) where they have common first shape dim.
@@ -15,5 +15,5 @@ def create_data_loader(data, batch_size=32, enable_cuda=False):
     """
     kwargs = {'num_workers': 1, 'pin_memory': True} if enable_cuda else {}
     dataset = create_tensor_dataset(data)
-    loader = torch.utils.data.DataLoader(dataset, batch_size, shuffle=True, **kwargs)
+    loader = torch.utils.data.DataLoader(dataset, batch_size, shuffle=shuffle, **kwargs)
     return loader

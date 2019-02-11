@@ -2,12 +2,17 @@ UNKNOWN = '<unk>'
 PAD = '<pad>'
 MAX_LEN = 156
 
+
 def sent2labels(sent):
     return [label for token, postag, label in sent]
 
 
 def sent2labels_index(sent, label_index):
     return [label_index[label] for token, postag, label in sent]
+
+
+def sent2pos_index(sent, pos_index):
+    return [pos_index[pos] for token, pos, label in sent]
 
 
 def sent2tokens(sent):
