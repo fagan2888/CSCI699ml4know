@@ -34,9 +34,9 @@ class BertClassifier(BaseClassifier):
 
     def fit(self, train_sentences, val_sentences, num_epoch=5, verbose=True):
         train_input_ids, train_label, train_attention_masks = self.feature_extractor(train_sentences)
-        train_sentences_length = [a.index(0.0) for a in train_attention_masks]
+        train_sentences_length = [len(s) for s in train_sentences]
         val_input_ids, val_label, val_attention_masks = self.feature_extractor(val_sentences)
-        val_sentences_length = [a.index(0.0) for a in val_attention_masks]
+        val_sentences_length = [len(s) for s in val_sentences]
 
         train_data_loader = create_data_loader((train_input_ids, train_attention_masks, train_label), batch_size=16,
                                                enable_cuda=self.enable_cuda, shuffle=True)
@@ -120,7 +120,7 @@ class BertClassifier(BaseClassifier):
 
     def predict(self, sentences):
         input_ids, _, attention_masks = self.feature_extractor(sentences)
-        sentence_length = [a.index(0.0) for a in attention_masks]
+        sentence_length = [len(s) for s in sentences]
         data_loader = create_data_loader((input_ids, attention_masks), batch_size=16, enable_cuda=self.enable_cuda,
                                          shuffle=False)
         return self._predict(data_loader, sentence_length)
