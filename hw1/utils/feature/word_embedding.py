@@ -129,7 +129,7 @@ class RNNFeatureExtractor(FeatureExtractor):
         pos = [sent2pos_index(s, self.pos_index) for s in sentences]
         # pad sequence
         X = pad_sequences(X, maxlen=MAX_LEN, padding='post', truncating='post', value=self.word_index[PAD])
-        pos_feature = pad_sequences(pos, maxlen=MAX_LEN, padding='post', truncating='post', value=self.pos_index['XX'])
+        pos_feature = pad_sequences(pos, maxlen=MAX_LEN, padding='post', truncating='post', value=self.pos_index[PAD])
         pos_feature = to_categorical(pos_feature, len(self.pos_index))
         y = pad_sequences(y, maxlen=MAX_LEN, padding='post', truncating='post', value=-1)
 

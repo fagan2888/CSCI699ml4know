@@ -90,7 +90,8 @@ class RNNClassifier(BaseClassifier):
     def _predict(self, data_loader, sentence_length):
         predicted_labels = []
         self.model.eval()
-        for X, feature, _ in tqdm(data_loader):
+        for data in tqdm(data_loader):
+            X, feature = data[0], data[1]
             X = X.type(torch.FloatTensor)
             if self.enable_cuda:
                 X = X.type(torch.cuda.LongTensor)
@@ -130,41 +131,9 @@ class RNNClassifier(BaseClassifier):
         return precision, recall, f1_score
 
     def predict(self, sentences):
-        self.model.eval()
         X, feature, _, sentence_length = self.feature_extractor(sentences)
         data_loader = create_data_loader((X, feature), batch_size=128, enable_cuda=self.enable_cuda, shuffle=False)
-        predicted_labels = []
-        for X, feature in tqdm(data_loader):
-            X = X.type(torch.FloatTensor)
-            if self.enable_cuda:
-                X = X.type(torch.cuda.LongTensor)
-                feature = feature.type(torch.cuda.FloatTensor)
-            else:
-                X = X.type(torch.LongTensor)
-                feature = feature.type(torch.FloatTensor)
-
-            with torch.no_grad():
-                output = self.model.forward(X, feature).cpu().numpy()
-                output = np.argmax(output, axis=-1)
-                predicted_labels.append(output)
-        self.model.train()
-        predicted_labels = np.concatenate(predicted_labels, axis=0)
-
-        assert len(sentence_length) == predicted_labels.shape[0], 'Length must match'
-        final_labels = []
-        for i in range(predicted_labels.shape[0]):
-            current_result = []
-            if sentence_length[i] <= predicted_labels.shape[1]:
-                for j in range(sentence_length[i]):
-                    current_result.append(self.index_to_label[predicted_labels[i][j]])
-            else:
-                for j in range(predicted_labels.shape[1]):
-                    current_result.append(self.index_to_label[predicted_labels[i][j]])
-                for _ in range(sentence_length[i] - predicted_labels.shape[1]):
-                    current_result.append('O')
-            final_labels.append(current_result)
-
-        return final_labels
+        return self._predict(data_loader, sentence_length)
 
     def save_checkpoint(self, checkpoint_path):
         torch.save(self.model.state_dict(), checkpoint_path)

@@ -25,6 +25,7 @@ def build_vocab(sentences):
 
     pos_data = [sent2pos(sent) for sent in sentences]
     all_pos = sorted(list({pos for sent in pos_data for pos in sent}))
+    all_pos.insert(0, PAD)
     pos_index = {pos: i for i, pos in enumerate(all_pos)}
 
     return vocab, word_index, all_labels, labels_index, all_pos, pos_index
