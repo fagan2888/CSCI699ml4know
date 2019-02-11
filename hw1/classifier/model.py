@@ -21,7 +21,8 @@ class RNNModel(nn.Module):
             num_direction = 1
         else:
             raise ValueError('Unknown rnn_type {}'.format(rnn_type))
-        self.rnn = nn.LSTM(input_size=embedding_dim + additional_feature_dim, hidden_size=256, num_layers=1, bias=True,
+        self.rnn = nn.LSTM(input_size=embedding_dim + additional_feature_dim, hidden_size=256, num_layers=3,
+                           bias=True, dropout=0.5,
                            batch_first=True, bidirectional=bidirectional)
 
         self.linear = nn.Linear(256 * num_direction, n_tags)

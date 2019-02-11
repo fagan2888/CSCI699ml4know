@@ -16,7 +16,7 @@ class BaseClassifier(object):
     def evaluate(self, sentences):
         y_pred = self.predict(sentences)
         new_sents = append_column(sentences, y_pred)
-        precision, recall, f1_score = conlleval.evaluate(data_to_output(new_sents))
+        precision, recall, f1_score = conlleval.my_evaluate(data_to_output(new_sents))
         return precision, recall, f1_score
 
     def predict(self, sentences):
