@@ -9,9 +9,11 @@ import numpy as np
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical
 from tqdm import tqdm
+from pytorch_pretrained_bert import BertTokenizer
 
 from .common import UNKNOWN, PAD, MAX_LEN
-from .common import sent2token_index, sent2labels_index, sent2pos_index
+from .common import sent2token_index, sent2labels_index, sent2pos_index, sent2tokens
+from .common import FeatureExtractor
 
 glove_total = 400000
 
@@ -96,8 +98,15 @@ def build_embedding_matrix(embedding_model, vocab, verbose=False):
     return embedding_matrix
 
 
-def make_word_embedding_feature_extractor(word_index, labels_index, pos_index):
-    def word_embedding_feature_extractor(sentences):
+
+
+class RNNFeatureExtractor(FeatureExtractor):
+    def __init__(self, word_index, labels_index, pos_index):
+        self.word_index = word_index
+        self.labels_index = labels_index
+        self.pos_index = pos_index
+
+    def __call__(self, sentences):
         """ It translate words into index and pad into the same length using PAD
 
         Args:
@@ -106,10 +115,10 @@ def make_word_embedding_feature_extractor(word_index, labels_index, pos_index):
         Returns: (word_index, additional_feature, tag, mask)
 
         """
-        X = [sent2token_index(s, word_index) for s in sentences]
+        X = [sent2token_index(s, self.word_index) for s in sentences]
         word_tuple = sentences[0][0]
         if len(word_tuple) == 3:
-            y = [sent2labels_index(s, labels_index) for s in sentences]
+            y = [sent2labels_index(s, self.labels_index) for s in sentences]
         elif len(word_tuple) == 2:
             y = None
         else:
@@ -117,14 +126,58 @@ def make_word_embedding_feature_extractor(word_index, labels_index, pos_index):
                 'Each word in sent must be (token, postag, label) or (token postag), but got length {}'.format(
                     len(word_tuple)))
 
-        pos = [sent2pos_index(s, pos_index) for s in sentences]
+        pos = [sent2pos_index(s, self.pos_index) for s in sentences]
         # pad sequence
-        X = pad_sequences(X, maxlen=MAX_LEN, padding='post', truncating='post', value=word_index[PAD])
-        pos_feature = pad_sequences(pos, maxlen=MAX_LEN, padding='post', truncating='post', value=pos_index['XX'])
-        pos_feature = to_categorical(pos_feature, len(pos_index))
+        X = pad_sequences(X, maxlen=MAX_LEN, padding='post', truncating='post', value=self.word_index[PAD])
+        pos_feature = pad_sequences(pos, maxlen=MAX_LEN, padding='post', truncating='post', value=self.pos_index['XX'])
+        pos_feature = to_categorical(pos_feature, len(self.pos_index))
         y = pad_sequences(y, maxlen=MAX_LEN, padding='post', truncating='post', value=-1)
 
         sentence_length = [len(s) for s in sentences]
         return X, pos_feature, y, sentence_length
 
-    return word_embedding_feature_extractor
+
+class BertFeatureExtractor(FeatureExtractor):
+    def __init__(self, labels_index, tokenizer=None):
+        self.labels_index = labels_index
+        if not tokenizer:
+            self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+        else:
+            self.tokenizer = tokenizer
+
+    def __call__(self, sentences):
+        """ Extractor features to finetune pretrained Bert Model
+
+        Args:
+            sentences: list of list of (token, pos, tag)
+
+        Returns:
+            token_idx: index of token in bert tokenizer
+            tag_index: index of tag
+            mask: 1 for non-padding token and 0 for padding token
+
+        """
+        joint_sentences = [" ".join(sent2tokens(sent)) for sent in sentences]
+        tokenized_texts = [self.tokenizer.tokenize(sent) for sent in joint_sentences]
+
+        word_tuple = sentences[0][0]
+        if len(word_tuple) == 3:
+            y = [sent2labels_index(s, self.labels_index) for s in sentences]
+            y = pad_sequences([[self.labels_index.get(l) for l in lab] for lab in y],
+                              maxlen=MAX_LEN, value=self.labels_index["O"], padding="post",
+                              dtype="long", truncating="post")
+        elif len(word_tuple) == 2:
+            y = None
+        else:
+            raise ValueError(
+                'Each word in sent must be (token, postag, label) or (token postag), but got length {}'.format(
+                    len(word_tuple)))
+
+        input_ids = pad_sequences([self.tokenizer.convert_tokens_to_ids(txt) for txt in tokenized_texts],
+                                  maxlen=MAX_LEN, dtype="long", truncating="post", padding="post")
+
+
+        attention_masks = [[float(i > 0) for i in ii] for ii in input_ids]
+
+        return input_ids, y, attention_masks
+

@@ -3,7 +3,7 @@ Hand-crafted features. Code adapted from https://sklearn-crfsuite.readthedocs.io
 It returns a list of list of dictionaries.
 """
 
-from .common import sent2labels
+from .common import sent2labels, FeatureExtractor
 
 
 def word2features(sent, i):
@@ -54,14 +54,16 @@ def sent2features(sent):
     return [word2features(sent, i) for i in range(len(sent))]
 
 
-def manual_feature_extractor(sentences):
-    X = [sent2features(s) for s in sentences]
-    word_tuple_length = sentences[0][0]
-    if len(word_tuple_length) == 3:
-        y = [sent2labels(s) for s in sentences]
-    elif len(word_tuple_length) == 2:
-        y = None
-    else:
-        raise ValueError('Each word in sent must be (token, postag, label) or (token postag), but got length {}'.format(
-            word_tuple_length))
-    return X, y
+class ManualFeatureExtractor(FeatureExtractor):
+    def __call__(self, sentences):
+        X = [sent2features(s) for s in sentences]
+        word_tuple_length = sentences[0][0]
+        if len(word_tuple_length) == 3:
+            y = [sent2labels(s) for s in sentences]
+        elif len(word_tuple_length) == 2:
+            y = None
+        else:
+            raise ValueError(
+                'Each word in sent must be (token, postag, label) or (token postag), but got length {}'.format(
+                    word_tuple_length))
+        return X, y

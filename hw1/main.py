@@ -1,6 +1,6 @@
 from utils.data_converter import read_data
 from classifier import CRFClassifier
-from utils.feature.manual import manual_feature_extractor
+from utils.feature.manual import ManualFeatureExtractor
 
 def main_parser():
     import argparse
@@ -12,7 +12,8 @@ def main_parser():
 if __name__ == '__main__':
     train = False
     checkpoint_path = 'checkpoint/crf.model'
-    classifier = CRFClassifier(manual_feature_extractor, None, verbose=True)
+    manual_feature_extractor = ManualFeatureExtractor()
+    classifier = CRFClassifier(manual_feature_extractor, None)
 
     if train:
         sentences = read_data('data/onto.train')
@@ -24,7 +25,7 @@ if __name__ == '__main__':
         train_sentences = sentences[:int(total_num_sentences * 0.75)]
         val_sentences = sentences[int(total_num_sentences * 0.75):]
 
-        classifier.fit(train_sentences, val_sentences)
+        classifier.fit(train_sentences, val_sentences, num_epoch=100, verbose=True)
         classifier.save_checkpoint(checkpoint_path)
 
 

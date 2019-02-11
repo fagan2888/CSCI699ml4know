@@ -32,3 +32,8 @@ def sent2token_index(sent, word_index):
 
 def sent2pos(sent):
     return [postag for token, postag, label in sent]
+
+
+class FeatureExtractor(object):
+    def __call__(self, sentences):
+        raise NotImplementedError
