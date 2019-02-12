@@ -32,17 +32,17 @@ class BertClassifier(BaseClassifier):
         if enable_cuda:
             self.model.cuda()
 
-    def fit(self, train_sentences, val_sentences, num_epoch=5, verbose=True):
+    def fit(self, train_sentences, val_sentences, num_epoch=10, verbose=True):
         train_input_ids, train_label, train_attention_masks = self.feature_extractor(train_sentences)
         train_sentences_length = [len(s) for s in train_sentences]
         val_input_ids, val_label, val_attention_masks = self.feature_extractor(val_sentences)
         val_sentences_length = [len(s) for s in val_sentences]
 
-        train_data_loader = create_data_loader((train_input_ids, train_attention_masks, train_label), batch_size=16,
+        train_data_loader = create_data_loader((train_input_ids, train_attention_masks, train_label), batch_size=8,
                                                enable_cuda=self.enable_cuda, shuffle=True)
         train_data_loader_no_shuffle = create_data_loader((train_input_ids, train_attention_masks, train_label),
-                                                          batch_size=16, enable_cuda=self.enable_cuda, shuffle=False)
-        val_data_loader = create_data_loader((val_input_ids, val_attention_masks, val_label), batch_size=16,
+                                                          batch_size=8, enable_cuda=self.enable_cuda, shuffle=False)
+        val_data_loader = create_data_loader((val_input_ids, val_attention_masks, val_label), batch_size=8,
                                              shuffle=False)
 
         for i in range(num_epoch):
@@ -53,6 +53,14 @@ class BertClassifier(BaseClassifier):
             for batch in tqdm(train_data_loader):
                 self.model.zero_grad()
                 b_input_ids, b_input_mask, b_labels = batch
+                if self.enable_cuda:
+                    b_input_ids = b_input_ids.type(torch.cuda.LongTensor)
+                    b_input_mask = b_input_mask.type(torch.cuda.FloatTensor)
+                    b_labels = b_labels.type(torch.cuda.LongTensor)
+                else:
+                    b_input_ids = b_input_ids.type(torch.LongTensor)
+                    b_input_mask = b_input_mask.type(torch.FloatTensor)
+                    b_labels = b_labels.type(torch.LongTensor)
                 # forward pass
                 loss = self.model(b_input_ids, token_type_ids=None, attention_mask=b_input_mask, labels=b_labels)
                 # backward pass

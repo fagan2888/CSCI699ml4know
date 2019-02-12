@@ -163,8 +163,7 @@ class BertFeatureExtractor(FeatureExtractor):
         word_tuple = sentences[0][0]
         if len(word_tuple) == 3:
             y = [sent2labels_index(s, self.labels_index) for s in sentences]
-            y = pad_sequences([[self.labels_index.get(l) for l in lab] for lab in y],
-                              maxlen=MAX_LEN, value=self.labels_index["O"], padding="post",
+            y = pad_sequences(y, maxlen=MAX_LEN, value=self.labels_index["O"], padding="post",
                               dtype="long", truncating="post")
         elif len(word_tuple) == 2:
             y = None
@@ -177,7 +176,7 @@ class BertFeatureExtractor(FeatureExtractor):
                                   maxlen=MAX_LEN, dtype="long", truncating="post", padding="post")
 
 
-        attention_masks = [[float(i > 0) for i in ii] for ii in input_ids]
+        attention_masks = (input_ids > 0).astype(np.float32)
 
         return input_ids, y, attention_masks
 

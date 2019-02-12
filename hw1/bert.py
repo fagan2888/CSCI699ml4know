@@ -12,7 +12,9 @@ if __name__ == '__main__':
 
     classifier = BertClassifier(feature_extractor, index_to_label, enable_cuda)
 
-    classifier.load_checkpoint('checkpoint/bert.ckpt')
+    checkpoint_path = 'checkpoint/bert.ckpt'
+
+    classifier.load_checkpoint(checkpoint_path)
 
     total_num_sentences = len(sentences)
     print('Total number of sentences: {}'.format(total_num_sentences))
@@ -20,7 +22,8 @@ if __name__ == '__main__':
     train_sentences = sentences[:int(total_num_sentences * 0.75)]
     val_sentences = sentences[int(total_num_sentences * 0.75):]
 
+    classifier.fit(train_sentences, val_sentences, num_epoch=5, verbose=True)
+
     precision, recall, f1_score = classifier.evaluate(val_sentences)
 
-
-
+    classifier.save_checkpoint(checkpoint_path)
