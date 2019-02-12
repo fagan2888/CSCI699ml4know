@@ -22,8 +22,17 @@ if __name__ == '__main__':
     train_sentences = sentences[:int(total_num_sentences * 0.75)]
     val_sentences = sentences[int(total_num_sentences * 0.75):]
 
-    classifier.fit(train_sentences, val_sentences, num_epoch=5, verbose=True)
+    # classifier.fit(train_sentences, val_sentences, num_epoch=5, verbose=True)
 
     precision, recall, f1_score = classifier.evaluate(val_sentences)
+
+    print('Val prec {} - Val rec - Val f1 {}'.format(precision, recall, f1_score))
+
+
+    testa_sentences = read_data('data/onto.testa')
+
+    precision, recall, f1_score = classifier.evaluate(testa_sentences)
+
+    print('Testa prec {} - Testa rec {} - Testa f1 {}'.format(precision, recall, f1_score))
 
     classifier.save_checkpoint(checkpoint_path)
