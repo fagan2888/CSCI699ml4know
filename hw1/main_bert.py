@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     precision, recall, f1_score = classifier.evaluate(val_sentences)
 
-    print('Val prec {} - Val rec - Val f1 {}'.format(precision, recall, f1_score))
+    print('Val prec {} - Val rec {} - Val f1 {}'.format(precision, recall, f1_score))
 
 
     testa_sentences = read_data('data/onto.testa')

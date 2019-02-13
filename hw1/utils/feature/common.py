@@ -1,6 +1,6 @@
 UNKNOWN = '<unk>'
 PAD = '<pad>'
-MAX_LEN = 156
+MAX_LEN = 75
 
 
 def sent2labels(sent):

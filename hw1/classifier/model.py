@@ -16,27 +16,33 @@ class RNNModel(nn.Module):
         if rnn_type == 'bilstm':
             bidirectional = True
             num_direction = 2
-            self.rnn = nn.LSTM(input_size=embedding_dim + additional_feature_dim, hidden_size=256, num_layers=n_layers,
+            self.rnn = nn.LSTM(input_size=embedding_dim + additional_feature_dim, hidden_size=64, num_layers=n_layers,
                                bias=True, dropout=0.5,
                                batch_first=True, bidirectional=bidirectional)
         elif rnn_type == 'lstm':
             bidirectional = False
             num_direction = 1
-            self.rnn = nn.LSTM(input_size=embedding_dim + additional_feature_dim, hidden_size=256, num_layers=n_layers,
+            self.rnn = nn.LSTM(input_size=embedding_dim + additional_feature_dim, hidden_size=64, num_layers=n_layers,
                                bias=True, dropout=0.5,
                                batch_first=True, bidirectional=bidirectional)
         elif rnn_type == 'cnn':
             modules = []
-            for _ in range(n_layers):
-                modules.append(nn.Conv1d(in_channels=embedding_dim + additional_feature_dim, out_channels=256,
+            modules.append(nn.Conv1d(in_channels=embedding_dim + additional_feature_dim, out_channels=64,
+                                     kernel_size=5, padding=2, stride=1))
+            modules.append(nn.ReLU())
+            for _ in range(n_layers - 1):
+                modules.append(nn.Conv1d(in_channels=64, out_channels=64,
                                          kernel_size=5, padding=2, stride=1))
+                modules.append(nn.BatchNorm1d(num_features=64))
                 modules.append(nn.ReLU())
             self.rnn = nn.Sequential(*modules)
             num_direction = 1
         else:
             raise ValueError('Unknown rnn_type {}'.format(rnn_type))
 
-        self.linear = nn.Linear(256 * num_direction, n_tags)
+        self.linear = nn.Linear(64 * num_direction, n_tags)
+
+        self.rnn_type = rnn_type
 
     def forward(self, sentences, features=None):
         """
@@ -51,7 +57,12 @@ class RNNModel(nn.Module):
         """
         sentences_embedding = self.embedding.forward(sentences)
         features = torch.cat((sentences_embedding, features), dim=-1)
-        output, _ = self.rnn.forward(features)
+        if self.rnn_type == 'cnn':
+            features = torch.transpose(features, 1, 2)
+            output = self.rnn.forward(features)
+            output = torch.transpose(output, 1, 2)
+        else:
+            output, _ = self.rnn.forward(features)
         batch_size, max_len, feature_dim = output.shape
         output = output.contiguous().view(-1, output.shape[2])
         output = self.linear.forward(output)

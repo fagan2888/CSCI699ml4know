@@ -22,7 +22,7 @@ loss_fn_dict = {
 
 
 def get_checkpoint_path(architecture, n_layer, manual, loss_fn, embed_dim):
-    return 'checkpoint/rnn_{}_{}_{}_{}_{}'.format(architecture, n_layer, manual, loss_fn, embed_dim)
+    return 'checkpoint/rnn_{}_{}_{}_{}_{}.ckpt'.format(architecture, n_layer, manual, loss_fn, embed_dim)
 
 
 def make_parser():
@@ -94,6 +94,7 @@ def eval(args):
     n_layers = args['n_layers']
     manual_feature = args['manual_feature']
     embed_dim = args['embed_dim']
+    infile = args['infile']
 
     checkpoint_path = get_checkpoint_path(architecture, n_layers, manual_feature, args['loss_fn'], embed_dim)
 
@@ -111,6 +112,12 @@ def eval(args):
                                enable_cuda=enable_cuda)
 
     classifier.load_checkpoint(checkpoint_path)
+
+    test_data = read_data(infile)
+
+    result = classifier.evaluate(test_data)
+
+    print(result)
 
 
 if __name__ == '__main__':
