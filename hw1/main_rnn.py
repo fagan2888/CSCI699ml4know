@@ -21,8 +21,8 @@ loss_fn_dict = {
 }
 
 
-def get_checkpoint_path(architecture, n_layer, manual, loss_fn, embed_dim):
-    return 'checkpoint/rnn_{}_{}_{}_{}_{}.ckpt'.format(architecture, n_layer, manual, loss_fn, embed_dim)
+def get_checkpoint_path(architecture, n_layers, manual, loss_fn, embed_dim):
+    return 'checkpoint/rnn_{}_{}_{}_{}_{}.ckpt'.format(architecture, n_layers, manual, loss_fn, embed_dim)
 
 
 def make_parser():
@@ -49,13 +49,34 @@ def make_parser():
     return parser
 
 
+def build_classifier(architecture, n_layers, manual, loss_fn, embedding_matrix, learning_rate, embed_dim):
+    _, word_index, index_to_label, labels_index, _, pos_index = build_vocab()
+    if embedding_matrix is None:
+        embedding_matrix = np.random.randn(len(word_index), embed_dim)
+    feature_extractor = RNNFeatureExtractor(word_index, labels_index, pos_index, include_manual_features=manual)
+    additional_feature_dim = feature_extractor.get_additional_feature_dim()
+    rnn_model = RNNModel(architecture, embedding_matrix, additional_feature_dim, len(index_to_label), n_layers=n_layers)
+    if enable_cuda:
+        rnn_model.cuda()
+
+    if learning_rate:
+        optimizer = optim.Adam(rnn_model.parameters(), lr=learning_rate)
+    else:
+        optimizer = None
+
+    classifier = RNNClassifier(feature_extractor, index_to_label, rnn_model, optimizer, loss_fn_dict[loss_fn],
+                               enable_cuda=enable_cuda)
+
+    return classifier
+
+
 def train(args):
     args = vars(args)
     pprint.pprint(args)
     architecture = args['architecture']
     n_layers = args['n_layers']
     manual_feature = args['manual_feature']
-    loss_fn = loss_fn_dict.get(args['loss_fn'])
+    loss_fn = args['loss_fn']
     embed_dim = args['embed_dim']
     learning_rate = args['learning_rate']
     num_epoch = args['num_epoch']
@@ -63,27 +84,18 @@ def train(args):
     checkpoint_path = get_checkpoint_path(architecture, n_layers, manual_feature, args['loss_fn'], embed_dim)
 
     sentences = read_data('data/onto.train')
-    vocab, word_index, index_to_label, labels_index, all_pos, pos_index = build_vocab(sentences)
-
+    vocab, word_index, index_to_label, labels_index, all_pos, pos_index = build_vocab()
+    total_num_sentences = len(sentences)
+    print('Total number of sentences: {}'.format(total_num_sentences))
+    train_sentences, val_sentences = train_test_split(sentences, test_size=0.25, random_state=123, shuffle=True)
     glove_model = load_glove6B(dimension=embed_dim)
     embedding_matrix = build_embedding_matrix(glove_model, vocab)
     del glove_model, vocab, all_pos
-    feature_extractor = RNNFeatureExtractor(word_index, labels_index, pos_index, include_manual_features=manual_feature)
-    additional_feature_dim = feature_extractor.get_additional_feature_dim()
-    total_num_sentences = len(sentences)
-    print('Total number of sentences: {}'.format(total_num_sentences))
 
-    train_sentences, val_sentences = train_test_split(sentences, test_size=0.25, random_state=123, shuffle=True)
-    rnn_model = RNNModel(architecture, embedding_matrix, additional_feature_dim, len(index_to_label), n_layers=n_layers)
-    if enable_cuda:
-        rnn_model.cuda()
+    classifier = build_classifier(architecture, n_layers, manual_feature, loss_fn, embedding_matrix, learning_rate,
+                                  embed_dim)
 
-    optimizer = optim.Adam(rnn_model.parameters(), lr=learning_rate)
-
-    classifier = RNNClassifier(feature_extractor, index_to_label, rnn_model, optimizer, loss_fn,
-                               enable_cuda=enable_cuda)
     classifier.fit(train_sentences, val_sentences, num_epoch=num_epoch, verbose=True)
-
     classifier.save_checkpoint(checkpoint_path)
 
 
@@ -95,28 +107,13 @@ def eval(args):
     manual_feature = args['manual_feature']
     embed_dim = args['embed_dim']
     infile = args['infile']
+    loss_fn = args['loss_fn']
 
-    checkpoint_path = get_checkpoint_path(architecture, n_layers, manual_feature, args['loss_fn'], embed_dim)
-
-    sentences = read_data('data/onto.train')
-    vocab, word_index, index_to_label, labels_index, all_pos, pos_index = build_vocab(sentences)
-    del vocab, all_pos
-    feature_extractor = RNNFeatureExtractor(word_index, labels_index, pos_index, include_manual_features=manual_feature)
-    additional_feature_dim = feature_extractor.get_additional_feature_dim()
-    rnn_model = RNNModel(architecture, np.random.randn(len(word_index), embed_dim), additional_feature_dim,
-                         len(index_to_label), n_layers=n_layers)
-    if enable_cuda:
-        rnn_model.cuda()
-
-    classifier = RNNClassifier(feature_extractor, index_to_label, rnn_model, None, loss_fn_dict[args['loss_fn']],
-                               enable_cuda=enable_cuda)
-
+    checkpoint_path = get_checkpoint_path(architecture, n_layers, manual_feature, loss_fn, embed_dim)
+    classifier = build_classifier(architecture, n_layers, manual_feature, loss_fn, None, None)
     classifier.load_checkpoint(checkpoint_path)
-
     test_data = read_data(infile)
-
     result = classifier.evaluate(test_data)
-
     print(result)
 
 
