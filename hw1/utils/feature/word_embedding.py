@@ -8,12 +8,12 @@ import pickle
 import numpy as np
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils.np_utils import to_categorical
-from tqdm import tqdm
 from pytorch_pretrained_bert import BertTokenizer
+from tqdm import tqdm
 
+from .common import FeatureExtractor
 from .common import UNKNOWN, PAD, MAX_LEN
 from .common import sent2token_index, sent2labels_index, sent2pos_index, sent2tokens
-from .common import FeatureExtractor
 
 glove_total = 400000
 
@@ -98,13 +98,12 @@ def build_embedding_matrix(embedding_model, vocab, verbose=False):
     return embedding_matrix
 
 
-
-
 class RNNFeatureExtractor(FeatureExtractor):
-    def __init__(self, word_index, labels_index, pos_index):
+    def __init__(self, word_index, labels_index, pos_index, include_manual_features=False):
         self.word_index = word_index
         self.labels_index = labels_index
         self.pos_index = pos_index
+        self.include_manual_features = include_manual_features
 
     def __call__(self, sentences):
         """ It translate words into index and pad into the same length using PAD
@@ -130,11 +129,37 @@ class RNNFeatureExtractor(FeatureExtractor):
         # pad sequence
         X = pad_sequences(X, maxlen=MAX_LEN, padding='post', truncating='post', value=self.word_index[PAD])
         pos_feature = pad_sequences(pos, maxlen=MAX_LEN, padding='post', truncating='post', value=self.pos_index[PAD])
-        pos_feature = to_categorical(pos_feature, len(self.pos_index))
+        features = to_categorical(pos_feature, len(self.pos_index))
         y = pad_sequences(y, maxlen=MAX_LEN, padding='post', truncating='post', value=-1)
 
+        tokens = [sent2tokens(sent) for sent in sentences]
+        # extractor manual features
+        if self.include_manual_features:
+            feature_is_upper = [[float(s.isupper()) for s in sent] for sent in tokens]
+            feature_is_upper = pad_sequences(feature_is_upper, maxlen=MAX_LEN, padding='post', truncating='post',
+                                             value=0.0)
+
+            feature_is_title = [[float(s.istitle()) for s in sent] for sent in tokens]
+            feature_is_title = pad_sequences(feature_is_title, maxlen=MAX_LEN, padding='post', truncating='post',
+                                             value=0.0)
+
+            feature_is_digit = [[float(s.isdigit()) for s in sent] for sent in tokens]
+            feature_is_digit = pad_sequences(feature_is_digit, maxlen=MAX_LEN, padding='post', truncating='post',
+                                             value=0.0)
+
+            additional_features = np.stack((feature_is_upper, feature_is_title, feature_is_digit), axis=-1)
+
+            features = np.concatenate((features, additional_features), axis=-1)
+
         sentence_length = [len(s) for s in sentences]
-        return X, pos_feature, y, sentence_length
+        return X, features, y, sentence_length
+
+    def get_additional_feature_dim(self):
+        additional_feature_dim = len(self.pos_index)
+        if self.include_manual_features:
+            return additional_feature_dim + 3
+        else:
+            return additional_feature_dim
 
 
 class BertFeatureExtractor(FeatureExtractor):
@@ -175,8 +200,6 @@ class BertFeatureExtractor(FeatureExtractor):
         input_ids = pad_sequences([self.tokenizer.convert_tokens_to_ids(txt) for txt in tokenized_texts],
                                   maxlen=MAX_LEN, dtype="long", truncating="post", padding="post")
 
-
         attention_masks = (input_ids > 0).astype(np.float32)
 
         return input_ids, y, attention_masks
-

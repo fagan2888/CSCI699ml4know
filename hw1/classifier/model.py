@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 
 class RNNModel(nn.Module):
-    def __init__(self, rnn_type, embedding_matrix, additional_feature_dim, n_tags):
+    def __init__(self, rnn_type, embedding_matrix, additional_feature_dim, n_tags, n_layers):
         super(RNNModel, self).__init__()
         num_embeddings, embedding_dim = embedding_matrix.shape
         embedding_matrix = torch.from_numpy(embedding_matrix).type(torch.FloatTensor)
@@ -16,14 +16,25 @@ class RNNModel(nn.Module):
         if rnn_type == 'bilstm':
             bidirectional = True
             num_direction = 2
+            self.rnn = nn.LSTM(input_size=embedding_dim + additional_feature_dim, hidden_size=256, num_layers=n_layers,
+                               bias=True, dropout=0.5,
+                               batch_first=True, bidirectional=bidirectional)
         elif rnn_type == 'lstm':
             bidirectional = False
             num_direction = 1
+            self.rnn = nn.LSTM(input_size=embedding_dim + additional_feature_dim, hidden_size=256, num_layers=n_layers,
+                               bias=True, dropout=0.5,
+                               batch_first=True, bidirectional=bidirectional)
+        elif rnn_type == 'cnn':
+            modules = []
+            for _ in range(n_layers):
+                modules.append(nn.Conv1d(in_channels=embedding_dim + additional_feature_dim, out_channels=256,
+                                         kernel_size=5, padding=2, stride=1))
+                modules.append(nn.ReLU())
+            self.rnn = nn.Sequential(*modules)
+            num_direction = 1
         else:
             raise ValueError('Unknown rnn_type {}'.format(rnn_type))
-        self.rnn = nn.LSTM(input_size=embedding_dim + additional_feature_dim, hidden_size=256, num_layers=3,
-                           bias=True, dropout=0.5,
-                           batch_first=True, bidirectional=bidirectional)
 
         self.linear = nn.Linear(256 * num_direction, n_tags)
 
@@ -50,7 +61,7 @@ class RNNModel(nn.Module):
         return F.log_softmax(output, dim=-1)
 
 
-def loss_fn(outputs, labels):
+def cross_entropy_with_mask(outputs, labels):
     # reshape labels to give a flat vector of length batch_size*seq_len
     labels = labels.view(-1)
     outputs = outputs.view(-1, outputs.shape[2])

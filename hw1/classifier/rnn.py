@@ -54,10 +54,9 @@ class RNNClassifier(BaseClassifier):
                                              enable_cuda=self.enable_cuda, shuffle=False)
 
         for i in range(num_epoch):
-            print('Epoch: {}/{}'.format(i + 1, num_epoch))
             total_loss = 0.0
             total = 0
-            for X, feature, y in tqdm(train_data_loader):
+            for X, feature, y in tqdm(train_data_loader, desc='Epoch: {}/{}'.format(i + 1, num_epoch)):
                 if self.enable_cuda:
                     X = X.type(torch.cuda.LongTensor)
                     feature = feature.type(torch.cuda.FloatTensor)
