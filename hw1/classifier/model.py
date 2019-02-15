@@ -7,6 +7,40 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+class SelfAttention(nn.Module):
+    """ Self attention Layer """
+
+    def __init__(self, in_dim):
+        super(SelfAttention, self).__init__()
+        self.chanel_in = in_dim
+
+        self.query_conv = nn.Conv1d(in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1)
+        self.key_conv = nn.Conv1d(in_channels=in_dim, out_channels=in_dim // 8, kernel_size=1)
+        self.value_conv = nn.Conv1d(in_channels=in_dim, out_channels=in_dim, kernel_size=1)
+        self.gamma = nn.Parameter(torch.zeros(1))
+
+        self.softmax = nn.Softmax(dim=-1)  #
+
+    def forward(self, x):
+        """
+            inputs :
+                x : input feature maps( B X C X N)
+            returns :
+                out : self attention value + input feature
+                attention: B X N X N (N is Width*Height)
+        """
+        proj_query = self.query_conv(x)
+        proj_key = self.key_conv(x)
+        energy = torch.bmm(proj_query, proj_key)  # transpose check
+        attention = self.softmax(energy)  # BX (N) X (N)
+        proj_value = self.value_conv(x)
+
+        out = torch.bmm(proj_value, attention.permute(0, 2, 1))
+
+        out = self.gamma * out + x
+        return out, attention
+
+
 class RNNModel(nn.Module):
     def __init__(self, rnn_type, embedding_matrix, additional_feature_dim, n_tags, n_layers):
         super(RNNModel, self).__init__()
@@ -33,6 +67,7 @@ class RNNModel(nn.Module):
             for _ in range(n_layers - 1):
                 modules.append(nn.Conv1d(in_channels=64, out_channels=64,
                                          kernel_size=5, padding=2, stride=1))
+                modules.append(SelfAttention(64))
                 modules.append(nn.BatchNorm1d(num_features=64))
                 modules.append(nn.ReLU())
             self.rnn = nn.Sequential(*modules)
