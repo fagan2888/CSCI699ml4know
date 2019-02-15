@@ -16,6 +16,7 @@ def make_parser():
     subparsers = parser.add_subparsers()
     train_parser = subparsers.add_parser('train')
     train_parser.add_argument('-ne', '--num_epoch', type=int, default=20)
+    train_parser.add_argument('-c', '--continue', action='store_true')
     train_parser.set_defaults(func=train)
 
     eval_parser = subparsers.add_parser('eval', help='If the test file contains label, print performance report, '
@@ -50,6 +51,8 @@ def train(args):
     train_sentences, val_sentences = train_test_split(sentences, test_size=0.25, random_state=123, shuffle=True)
 
     classifier = build_classifier()
+    if args['continue']:
+        classifier.load_checkpoint(get_checkpoint_path())
     classifier.fit(train_sentences, val_sentences, num_epoch=num_epoch, verbose=True)
     classifier.save_checkpoint(get_checkpoint_path())
 

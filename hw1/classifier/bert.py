@@ -38,11 +38,11 @@ class BertClassifier(BaseClassifier):
         val_input_ids, val_label, val_attention_masks = self.feature_extractor(val_sentences)
         val_sentences_length = [len(s) for s in val_sentences]
 
-        train_data_loader = create_data_loader((train_input_ids, train_attention_masks, train_label), batch_size=8,
+        train_data_loader = create_data_loader((train_input_ids, train_attention_masks, train_label), batch_size=16,
                                                enable_cuda=self.enable_cuda, shuffle=True)
         train_data_loader_no_shuffle = create_data_loader((train_input_ids, train_attention_masks, train_label),
-                                                          batch_size=8, enable_cuda=self.enable_cuda, shuffle=False)
-        val_data_loader = create_data_loader((val_input_ids, val_attention_masks, val_label), batch_size=8,
+                                                          batch_size=16, enable_cuda=self.enable_cuda, shuffle=False)
+        val_data_loader = create_data_loader((val_input_ids, val_attention_masks, val_label), batch_size=16,
                                              shuffle=False)
 
         for i in range(num_epoch):
