@@ -49,4 +49,4 @@ hw1/data/onto.train
 
 ### Predict results for onto.testb
 
-
+`python main_crf.py isupper istitle isdigit isfloat hyphen postag context predict --infile data/onto.testb --outfile crf_output.txt`
