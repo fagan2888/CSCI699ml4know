@@ -22,7 +22,6 @@ def make_parser():
     eval_parser = subparsers.add_parser('eval', help='If the test file contains label, print performance report, '
                                                      'else output a file with labels')
     eval_parser.add_argument('-f', '--infile')
-    eval_parser.add_argument('-o', '--outfile')
     eval_parser.set_defaults(func=eval)
 
     return parser

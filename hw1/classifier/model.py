@@ -29,7 +29,7 @@ class SelfAttention(nn.Module):
                 out : self attention value + input feature
                 attention: B X N X N (N is Width*Height)
         """
-        proj_query = self.query_conv(x)
+        proj_query = self.query_conv(x).permute(0, 2, 1)
         proj_key = self.key_conv(x)
         energy = torch.bmm(proj_query, proj_key)  # transpose check
         attention = self.softmax(energy)  # BX (N) X (N)
@@ -38,7 +38,7 @@ class SelfAttention(nn.Module):
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
 
         out = self.gamma * out + x
-        return out, attention
+        return out
 
 
 class RNNModel(nn.Module):

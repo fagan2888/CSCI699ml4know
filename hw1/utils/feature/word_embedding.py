@@ -99,11 +99,15 @@ def build_embedding_matrix(embedding_model, vocab, verbose=False):
 
 
 class RNNFeatureExtractor(FeatureExtractor):
-    def __init__(self, word_index, labels_index, pos_index, include_manual_features=False):
+    def __init__(self, word_index, labels_index, pos_index, include_manual_features=False, max_len=None):
         self.word_index = word_index
         self.labels_index = labels_index
         self.pos_index = pos_index
         self.include_manual_features = include_manual_features
+        if max_len:
+            self.max_len = max_len
+        else:
+            self.max_len = MAX_LEN
 
     def __call__(self, sentences):
         """ It translate words into index and pad into the same length using PAD
@@ -127,25 +131,26 @@ class RNNFeatureExtractor(FeatureExtractor):
 
         pos = [sent2pos_index(s, self.pos_index) for s in sentences]
         # pad sequence
-        X = pad_sequences(X, maxlen=MAX_LEN, padding='post', truncating='post', value=self.word_index[PAD])
-        pos_feature = pad_sequences(pos, maxlen=MAX_LEN, padding='post', truncating='post', value=self.pos_index[PAD])
+        X = pad_sequences(X, maxlen=self.max_len, padding='post', truncating='post', value=self.word_index[PAD])
+        pos_feature = pad_sequences(pos, maxlen=self.max_len, padding='post', truncating='post', value=self.pos_index[PAD])
         features = to_categorical(pos_feature, len(self.pos_index))
-        y = pad_sequences(y, maxlen=MAX_LEN, padding='post', truncating='post', value=-1)
+        if y:
+            y = pad_sequences(y, maxlen=self.max_len, padding='post', truncating='post', value=-1)
 
         tokens = [sent2tokens(sent) for sent in sentences]
         # extractor manual features
         if self.include_manual_features:
             feature_is_upper = [[float(s.isupper()) for s in sent] for sent in tokens]
-            feature_is_upper = pad_sequences(feature_is_upper, maxlen=MAX_LEN, padding='post', truncating='post',
-                                             value=0.0)
+            feature_is_upper = pad_sequences(feature_is_upper, maxlen=self.max_len, padding='post', truncating='post',
+                                             value=-1)
 
             feature_is_title = [[float(s.istitle()) for s in sent] for sent in tokens]
-            feature_is_title = pad_sequences(feature_is_title, maxlen=MAX_LEN, padding='post', truncating='post',
-                                             value=0.0)
+            feature_is_title = pad_sequences(feature_is_title, maxlen=self.max_len, padding='post', truncating='post',
+                                             value=-1)
 
             feature_is_digit = [[float(s.isdigit()) for s in sent] for sent in tokens]
-            feature_is_digit = pad_sequences(feature_is_digit, maxlen=MAX_LEN, padding='post', truncating='post',
-                                             value=0.0)
+            feature_is_digit = pad_sequences(feature_is_digit, maxlen=self.max_len, padding='post', truncating='post',
+                                             value=-1)
 
             additional_features = np.stack((feature_is_upper, feature_is_title, feature_is_digit), axis=-1)
 

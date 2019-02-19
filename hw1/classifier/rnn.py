@@ -43,7 +43,7 @@ class RNNClassifier(BaseClassifier):
         if enable_cuda:
             self.model.cuda()
 
-    def fit(self, train_sentences, val_sentences, num_epoch, verbose=True):
+    def fit(self, train_sentences, val_sentences, num_epoch, verbose=True, checkpoint_path=None):
         X_train, X_train_feature, y_train, train_sentences_length = self.feature_extractor(train_sentences)
         X_val, X_val_feature, y_val, val_sentences_length = self.feature_extractor(val_sentences)
         train_data_loader = create_data_loader((X_train, X_train_feature, y_train), batch_size=128,
@@ -52,7 +52,7 @@ class RNNClassifier(BaseClassifier):
                                                           enable_cuda=self.enable_cuda, shuffle=False)
         val_data_loader = create_data_loader((X_val, X_val_feature, y_val), batch_size=128,
                                              enable_cuda=self.enable_cuda, shuffle=False)
-
+        best_val_f1 = 0.0
         for i in range(num_epoch):
             total_loss = 0.0
             total = 0
@@ -85,6 +85,10 @@ class RNNClassifier(BaseClassifier):
             print(
                 'Train acc {:.4f} - Train rec {:.4f} - Train f1 {:.4f} - Val acc {:.4f} - Val rec {:.4f} - Val f1 {:.4f}'.format(
                     train_acc, train_recall, train_f1, val_acc, val_rec, val_f1))
+
+            if checkpoint_path and val_f1 > best_val_f1:
+                self.save_checkpoint(checkpoint_path)
+                best_val_f1 = val_f1
 
     def _predict(self, data_loader, sentence_length):
         predicted_labels = []

@@ -7,7 +7,7 @@ from utils.data_converter import append_column, data_to_output
 
 
 class BaseClassifier(object):
-    def fit(self, train_sentences, val_sentences, num_epoch, verbose):
+    def fit(self, train_sentences, val_sentences, num_epoch, verbose, checkpoint_path=None):
         """ To be consistent, these data needs to be raw data. It's the classifier's job
             to split train/val and perform feature extraction and preprocessing
         """

@@ -22,7 +22,7 @@ class CRFClassifier(BaseClassifier):
 
         self.model = None
 
-    def fit(self, train_sentences, val_sentences, num_epoch, verbose=False):
+    def fit(self, train_sentences, val_sentences, num_epoch, verbose=False, checkpoint_path=None):
         x_train, y_train = self.feature_extractor(train_sentences)
         x_val, y_val = self.feature_extractor(val_sentences)
         model = sklearn_crfsuite.CRF(algorithm='lbfgs',

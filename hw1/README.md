@@ -6,6 +6,8 @@ This code repository provides the data  and evaluation script to help you start 
 
 Both train, testa and (unlabeled) testb are provided. It's stored in `data/` folder. The data is organized into three columns with each representing: token, POS-tag, label
 
+Note that there is a bug in the original read_data, which will ignore the last sentence. In this repo, this function is fixed.
+
 ## Evaluation
 
 The offical evaluation script is written in `perl`, which is hard to integrate with current systems. [Here](https://github.com/spyysalo/conlleval.py) is a re-written version of evaluation script in python, which I included in `utils/conlleval.py`. The evaluation script works by taking a test file with *four* columns -- the original file with one additional column of predicted label at the end, it will generate a detailed report available for examination. 
@@ -24,7 +26,11 @@ See requirement.txt. To install, run command line
 
 We use [GloVe](https://nlp.stanford.edu/projects/glove/) to initialize our embedding. To download, run
 
-`bash pretrain/download_glove.sh`
+```bash
+cd pretrain
+bash download_glove.sh
+cd ..
+```
 
 Make sure to make directory named checkpoint under hw1 to save models.
 
@@ -50,3 +56,24 @@ hw1/data/onto.train
 ### Predict results for onto.testb
 
 `python main_crf.py isupper istitle isdigit isfloat hyphen postag context predict --infile data/onto.testb --outfile crf_output.txt`
+
+## RNN-based Model
+### Model training
+
+`python main_rnn.py -a bilstm -nl 2 -mf -l cross_entropy -d 50 train -lr 1e-3 -ne 20`
+
+### Evaluate on onto.testa
+
+`python main_rnn.py -a bilstm -nl 3 -mf -l cross_entropy -d 50 eval --infile data/onto.testa`
+
+### Predict results for onto.testb
+
+`python main_rnn.py -a bilstm -nl 2 -mf -l cross_entropy -d 50 predict --infile data/onto.testb --outfile rnn_output.txt`
+
+## Bert Finetuning (time-consuming)
+
+`python main_bert.py train -ne 20`
+
+### Evaluate on onto.testa
+
+`python main_bert.py eval --infile data/onto.testa`
