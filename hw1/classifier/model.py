@@ -60,15 +60,18 @@ class RNNModel(nn.Module):
                                bias=True, dropout=0.5,
                                batch_first=True, bidirectional=bidirectional)
         elif rnn_type == 'cnn':
+            kernel_size = 3
+            padding = (kernel_size - 1) // 2
+            num_channel = 64
             modules = []
-            modules.append(nn.Conv1d(in_channels=embedding_dim + additional_feature_dim, out_channels=64,
-                                     kernel_size=5, padding=2, stride=1))
+            modules.append(nn.Conv1d(in_channels=embedding_dim + additional_feature_dim, out_channels=num_channel,
+                                     kernel_size=kernel_size, padding=padding, stride=1))
+            modules.append(SelfAttention(num_channel))
             modules.append(nn.ReLU())
             for _ in range(n_layers - 1):
-                modules.append(nn.Conv1d(in_channels=64, out_channels=64,
-                                         kernel_size=5, padding=2, stride=1))
-                modules.append(SelfAttention(64))
-                modules.append(nn.BatchNorm1d(num_features=64))
+                modules.append(nn.Conv1d(in_channels=num_channel, out_channels=num_channel,
+                                         kernel_size=kernel_size, padding=padding, stride=1))
+                modules.append(SelfAttention(num_channel))
                 modules.append(nn.ReLU())
             self.rnn = nn.Sequential(*modules)
             num_direction = 1
