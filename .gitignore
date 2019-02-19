@@ -1,3 +1,4 @@
+out/
 rnn_output.txt
 crf_output.txt
 data/
