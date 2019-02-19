@@ -71,6 +71,7 @@ hw1/data/onto.train
 `python main_rnn.py -a bilstm -nl 2 -mf -l cross_entropy -d 50 predict --infile data/onto.testb --outfile rnn_output.txt`
 
 ## Bert Finetuning (time-consuming)
+### Model training
 
 `python main_bert.py train -ne 20`
 
