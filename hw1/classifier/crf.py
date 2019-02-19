@@ -9,7 +9,7 @@ from .base import BaseClassifier
 
 
 class CRFClassifier(BaseClassifier):
-    def __init__(self, feature_extractor, params):
+    def __init__(self, feature_extractor, c1=0.1, c2=0.1):
         """
 
         Args:
@@ -17,7 +17,8 @@ class CRFClassifier(BaseClassifier):
             params: hyperparameter of conditional random field
         """
         self.feature_extractor = feature_extractor
-        self.params = params
+        self.c1 = c1
+        self.c2 = c2
 
         self.model = None
 
@@ -25,8 +26,8 @@ class CRFClassifier(BaseClassifier):
         x_train, y_train = self.feature_extractor(train_sentences)
         x_val, y_val = self.feature_extractor(val_sentences)
         model = sklearn_crfsuite.CRF(algorithm='lbfgs',
-                                     c1=0.1,
-                                     c2=0.1,
+                                     c1=self.c1,
+                                     c2=self.c2,
                                      max_iterations=num_epoch,
                                      all_possible_transitions=True,
                                      verbose=verbose)

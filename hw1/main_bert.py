@@ -11,7 +11,7 @@ from utils.vocab import build_vocab
 
 def make_parser():
     import argparse
-    parser = argparse.ArgumentParser(description='Arguments for training RNN-based model')
+    parser = argparse.ArgumentParser(description='Arguments for training Bert model')
 
     subparsers = parser.add_subparsers()
     train_parser = subparsers.add_parser('train')
