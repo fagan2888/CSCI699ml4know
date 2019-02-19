@@ -15,3 +15,38 @@ To run this evaluation script, run command line:
 `python conlleval.py ${PREDICTION_FILE}`
 
 Or invoke function `evaluate()` directly on data represeted as list of sentences. See `utils/data_converter.py` for more details.
+
+
+## Package Requirement
+See requirement.txt. To install, run command line
+
+`pip install -r requirements.txt`
+
+We use [GloVe](https://nlp.stanford.edu/projects/glove/) to initialize our embedding. To download, run
+
+`bash pretrain/download_glove.sh`
+
+Make sure to make directory named checkpoint under hw1 to save models.
+
+`mkdir checkpoint`
+
+The data is removed for copyright issues. You need to put data under hw1. The directory should be
+
+```
+hw1/data/onto.testa
+hw1/data/onto.testb
+hw1/data/onto.train
+```
+
+## Conditional Random Field
+### Model training
+
+`python main_crf.py isupper istitle isdigit isfloat hyphen postag context train -ne 100`
+
+### Evaluate on onto.testa
+
+`python main_crf.py isupper istitle isdigit isfloat hyphen postag context eval --infile data/onto.testa`
+
+### Predict results for onto.testb
+
+

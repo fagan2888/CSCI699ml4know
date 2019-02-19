@@ -9,5 +9,6 @@ Feature extractors. We consider the following extractors:
    choose the best model we get from above. Or initialize the word vector with Glove or BERT.
 """
 
-
-
+from .common import sent2token_index, sent2tokens, sent2pos_index, sent2pos, sent2labels_index, sent2labels
+from .manual import ManualFeatureExtractor
+from .word_embedding import build_embedding_matrix, BertFeatureExtractor, RNNFeatureExtractor

@@ -29,6 +29,8 @@ def read_data(fname, ignore_docstart=False):
                 prev_sentence = []
                 continue
             prev_sentence.append(list(line.strip().split()))
+        if len(prev_sentence) > 0:
+            sentences.append(prev_sentence)
     return sentences
 
 
