@@ -4,24 +4,25 @@ MAX_LEN = 75
 
 
 def sent2labels(sent):
-    return [label for token, postag, label in sent]
+    return [s[-1] for s in sent]
 
 
 def sent2labels_index(sent, label_index):
-    return [label_index[label] for token, postag, label in sent]
+    return [label_index[s[-1]] for s in sent]
 
 
 def sent2pos_index(sent, pos_index):
-    return [pos_index[pos] for token, pos, label in sent]
+    return [pos_index[s[1]] for s in sent]
 
 
 def sent2tokens(sent):
-    return [token for token, postag, label in sent]
+    return [s[0] for s in sent]
 
 
 def sent2token_index(sent, word_index):
     token_lst = []
-    for token, _, label in sent:
+    for s in sent:
+        token = s[0]
         if token not in word_index:
             token_lst.append(word_index[UNKNOWN])
         else:

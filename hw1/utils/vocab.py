@@ -20,7 +20,11 @@ def build_vocab():
     if not os.path.isfile(filename):
         print('Building vocab using data/onto.train')
         sentences = read_data('data/onto.train')
+        testa_sentences = read_data('data/onto.testa')
+        testb_sentences = read_data('data/onto.testb')
         training_sentences = [sent2tokens(sent) for sent in sentences]
+        training_sentences.extend([sent2tokens(sent) for sent in testa_sentences])
+        training_sentences.extend([sent2tokens(sent) for sent in testb_sentences])
         vocab = sorted(list({token for sent in training_sentences for token in sent}))
         vocab.insert(0, UNKNOWN)
         vocab.insert(0, PAD)

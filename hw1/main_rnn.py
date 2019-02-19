@@ -110,7 +110,7 @@ def eval(args):
     loss_fn = args['loss_fn']
 
     checkpoint_path = get_checkpoint_path(architecture, n_layers, manual_feature, loss_fn, embed_dim)
-    classifier = build_classifier(architecture, n_layers, manual_feature, loss_fn, None, None)
+    classifier = build_classifier(architecture, n_layers, manual_feature, loss_fn, None, None, embed_dim)
     classifier.load_checkpoint(checkpoint_path)
     test_data = read_data(infile)
     result = classifier.evaluate(test_data)
