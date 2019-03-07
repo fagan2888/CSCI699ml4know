@@ -167,7 +167,7 @@ class PortfolioSim(object):
 
         rho1 = p1 / p0 - 1  # rate of returns
         r1 = np.log((p1 + eps) / (p0 + eps))  # log rate of return
-        reward = r1 / self.total_steps  # (22) average logarithmic accumulated return
+        reward = r1  # (22) average logarithmic accumulated return
         # remember for next step
         self.p0 = p1
 
@@ -210,8 +210,6 @@ class PortfolioEnv(gym.Env):
                  total_steps=260,  # 1 years
                  trading_cost=0.0025,
                  time_cost=0.00,
-                 window_length=50,
-                 start_idx=0,
                  start_date=None
                  ):
         """
@@ -226,9 +224,7 @@ class PortfolioEnv(gym.Env):
             start_idx - The number of days from '2012-08-13' of the dataset
             sample_start_date - The start date sampling from the history
         """
-        self.window_length = window_length
         self.num_stocks = len(pd_frame_dict.keys())
-        self.start_idx = start_idx
 
         self.src = DataGenerator(pd_frame_dict, total_steps=total_steps, start_date=start_date)
 
@@ -303,6 +299,9 @@ class PortfolioEnv(gym.Env):
         elif mode == 'human':
             self.plot()
 
+    def seed(self, seed=None):
+        self.seed = seed
+
     def plot(self):
         # show a plot of portfolio vs mean market performance
         df_info = pd.DataFrame(self.infos)
@@ -314,6 +313,17 @@ class PortfolioEnv(gym.Env):
 
 
 class PortfolioEnvPriceOnly(PortfolioEnv):
+    def __init__(self,
+                 pd_frame_dict,
+                 total_steps=260,  # 1 years
+                 trading_cost=0.0025,
+                 time_cost=0.00,
+                 start_date=None
+                 ):
+        super(PortfolioEnvPriceOnly, self).__init__(pd_frame_dict, total_steps,
+                                                    trading_cost, time_cost, start_date)
+        self.observation_space = gym.spaces.Box(-np.inf, np.inf, shape=(1,), dtype=np.float32)
+
     def step(self, action):
         observation, reward, done, info = super(PortfolioEnvPriceOnly, self).step(action)
         close_ratio = self.get_normalized_close_ratio(observation)
