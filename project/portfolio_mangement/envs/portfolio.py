@@ -300,7 +300,7 @@ class PortfolioEnv(gym.Env):
             self.plot()
 
     def seed(self, seed=None):
-        self.seed = seed
+        self.np_random_seed = seed
 
     def plot(self):
         # show a plot of portfolio vs mean market performance
