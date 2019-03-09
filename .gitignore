@@ -1,3 +1,4 @@
+runs/
 *.ipynb
 out/
 rnn_output.txt

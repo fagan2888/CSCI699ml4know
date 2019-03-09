@@ -1,1 +1,1 @@
-from .portfolio import PortfolioEnvPriceOnly, PortfolioEnv
+from .portfolio import PortfolioEnvPriceOnly, PortfolioEnv, PortfolioEnvPriceOnlyRewardShape

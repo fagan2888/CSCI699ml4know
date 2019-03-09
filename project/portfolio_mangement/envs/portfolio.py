@@ -337,3 +337,14 @@ class PortfolioEnvPriceOnly(PortfolioEnv):
         close_ratio = observation.get_close_ratio()
         close_ratio = (close_ratio - 1.) * 100
         return close_ratio
+
+
+class PortfolioEnvPriceOnlyRewardShape(PortfolioEnvPriceOnly):
+    def step(self, action):
+        close_ratio, reward, done, info = super(PortfolioEnvPriceOnlyRewardShape, self).step(action)
+        if reward > 0:
+            reward = 1
+        else:
+            reward = -1
+
+        return close_ratio, reward, done, info

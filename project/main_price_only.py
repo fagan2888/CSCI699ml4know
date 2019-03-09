@@ -3,10 +3,11 @@ from collections import OrderedDict
 
 import numpy as np
 import torch.optim
+import torchlib.deep_rl as deep_rl
 import torchlib.deep_rl.policy_gradient.ppo as ppo
 from torchlib.deep_rl.policy_gradient.models import PolicyContinuous
 
-from portfolio_mangement.envs import PortfolioEnvPriceOnly
+from portfolio_mangement.envs import PortfolioEnvPriceOnlyRewardShape, PortfolioEnvPriceOnly
 from portfolio_mangement.utils.data import read_djia_observation
 
 
@@ -27,26 +28,14 @@ def make_parser():
     parser.add_argument('--learning_rate', '-lr', type=float, default=5e-3)
     parser.add_argument('--nn_size', '-s', type=int, default=64)
     parser.add_argument('--seed', type=int, default=1)
+    parser.add_argument('--test', action='store_true')
     return parser
 
 
-if __name__ == '__main__':
-    parser = make_parser()
-    args = parser.parse_args()
-    pprint.pprint(vars(args))
-
-    max_path_length = args.ep_len if args.ep_len > 0 else None
-
-    pd_frame = read_djia_observation('data/stocknews')
-    pd_frame_dict = OrderedDict()
-    pd_frame_dict['DJIA'] = pd_frame
-
-    env = PortfolioEnvPriceOnly(pd_frame_dict, total_steps=max_path_length)
-
+def build_agent(args, env):
     # Observation and action sizes
     ob_dim = env.observation_space.shape[0]
     ac_dim = env.action_space.shape[0]
-
     recurrent = args.recurrent
     hidden_size = args.hidden_size
 
@@ -68,7 +57,40 @@ if __name__ == '__main__':
                       clip_param=args.clip_param,
                       entropy_coef=args.entropy_coef, value_coef=args.value_coef)
 
-    ppo.train(args.exp_name, env, agent, args.n_iter, args.discount, args.batch_size, max_path_length,
-              logdir=None, seed=args.seed)
+    return agent
 
-    agent.save_checkpoint('checkpoint/price_only_ppo.ckpt')
+
+if __name__ == '__main__':
+    parser = make_parser()
+    args = parser.parse_args()
+    pprint.pprint(vars(args))
+
+    max_path_length = args.ep_len if args.ep_len > 0 else None
+
+    test = args.test
+
+    pd_frame = read_djia_observation('data/stocknews')
+    pd_frame_dict = OrderedDict()
+
+    train_pd_frame, test_pd_frame = np.split(pd_frame, [int(0.8 * len(pd_frame))])
+    checkpoint_path = 'checkpoint/price_only_ppo.ckpt'
+
+    if not test:
+        pd_frame_dict['DJIA'] = train_pd_frame
+        env = PortfolioEnvPriceOnlyRewardShape(pd_frame_dict, total_steps=max_path_length)
+
+        agent = build_agent(args, env)
+        ppo.train(args.exp_name, env, agent, args.n_iter, args.discount, args.batch_size, max_path_length,
+                  logdir='runs/price_only_ppo', seed=args.seed, checkpoint_path=checkpoint_path)
+
+    else:
+        pd_frame_dict['DJIA'] = test_pd_frame
+        print('Test on Reward Shaping Env')
+        env = PortfolioEnvPriceOnlyRewardShape(pd_frame_dict, total_steps=max_path_length)
+        agent = build_agent(args, env)
+        agent.load_checkpoint(checkpoint_path)
+        deep_rl.test(env, agent, args.n_iter, seed=args.seed)
+
+        print('Test on Original Env')
+        env = PortfolioEnvPriceOnly(pd_frame_dict, total_steps=max_path_length)
+        deep_rl.test(env, agent, args.n_iter, seed=args.seed)
