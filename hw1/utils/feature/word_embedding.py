@@ -132,7 +132,8 @@ class RNNFeatureExtractor(FeatureExtractor):
         pos = [sent2pos_index(s, self.pos_index) for s in sentences]
         # pad sequence
         X = pad_sequences(X, maxlen=self.max_len, padding='post', truncating='post', value=self.word_index[PAD])
-        pos_feature = pad_sequences(pos, maxlen=self.max_len, padding='post', truncating='post', value=self.pos_index[PAD])
+        pos_feature = pad_sequences(pos, maxlen=self.max_len, padding='post', truncating='post',
+                                    value=self.pos_index[PAD])
         features = to_categorical(pos_feature, len(self.pos_index))
         if y:
             y = pad_sequences(y, maxlen=self.max_len, padding='post', truncating='post', value=-1)
@@ -188,7 +189,8 @@ class BertFeatureExtractor(FeatureExtractor):
 
         """
         joint_sentences = [" ".join(sent2tokens(sent)) for sent in sentences]
-        tokenized_texts = [self.tokenizer.tokenize(sent) for sent in joint_sentences]
+        tokenized_texts = [['[CLS]'] + self.tokenizer.tokenize(sent)[:MAX_LEN - 2] + ['[SEP]'] for sent in
+                           joint_sentences]
 
         word_tuple = sentences[0][0]
         if len(word_tuple) == 3:

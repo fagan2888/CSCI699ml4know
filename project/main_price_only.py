@@ -5,53 +5,11 @@ import numpy as np
 import torch.optim
 import torchlib.deep_rl as deep_rl
 import torchlib.deep_rl.policy_gradient.ppo as ppo
-import torch.nn as nn
 
-from torchlib.common import FloatTensor
-
+from portfolio_mangement.agents import PriceOnlyPolicyModule
 from portfolio_mangement.envs import PortfolioEnvPriceOnlyRewardShape, PortfolioEnvPriceOnly
 from portfolio_mangement.utils.data import read_djia_observation
 
-
-class PolicyContinuous(nn.Module):
-    def __init__(self, nn_size, state_dim, action_dim, recurrent=False, hidden_size=20):
-        super(PolicyContinuous, self).__init__()
-        random_number = np.random.randn(action_dim, action_dim)
-        random_number = np.dot(random_number.T, random_number)
-
-        self.logstd = torch.nn.Parameter(torch.tensor(random_number, requires_grad=True).type(FloatTensor))
-        self.model = nn.Sequential(
-            nn.Linear(state_dim, nn_size),
-            nn.ReLU(),
-            nn.Linear(nn_size, nn_size),
-            nn.ReLU(),
-        )
-
-        if recurrent:
-            linear_size = hidden_size
-        else:
-            linear_size = nn_size
-
-        self.action_head = nn.Sequential(
-            nn.Linear(linear_size, action_dim),
-            nn.Softmax(dim=-1)
-        )
-        self.value_head = nn.Linear(linear_size, 1)
-
-        self.recurrent = recurrent
-
-        if self.recurrent:
-            self.gru = nn.GRU(nn_size, hidden_size)
-
-    def forward(self, state, hidden):
-        x = self.model.forward(state)
-        if self.recurrent:
-            x, hidden = self.gru.forward(x.unsqueeze(0), hidden.unsqueeze(0))
-            x = x.squeeze(0)
-            hidden = hidden.squeeze(0)
-        mean = self.action_head.forward(x)
-        value = self.value_head.forward(x)
-        return (mean, self.logstd), hidden, value.squeeze(-1)
 
 def make_parser():
     import argparse
@@ -81,7 +39,7 @@ def build_agent(args, env):
     recurrent = args.recurrent
     hidden_size = args.hidden_size
 
-    policy_net = PolicyContinuous(args.nn_size, ob_dim, ac_dim, recurrent, hidden_size)
+    policy_net = PriceOnlyPolicyModule(args.nn_size, ob_dim, ac_dim, recurrent, hidden_size)
 
     policy_optimizer = torch.optim.Adam(policy_net.parameters(), args.learning_rate)
 
