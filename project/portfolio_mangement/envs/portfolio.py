@@ -342,8 +342,10 @@ class PortfolioEnvPriceOnly(PortfolioEnv):
 class PortfolioEnvPriceOnlyRewardShape(PortfolioEnvPriceOnly):
     def step(self, action):
         close_ratio, reward, done, info = super(PortfolioEnvPriceOnlyRewardShape, self).step(action)
-        if reward > 0:
+        if reward > 0.0:
             reward = 1
+        elif reward == 0.0:
+            reward = 0
         else:
             reward = -1
 
