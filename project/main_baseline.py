@@ -107,11 +107,10 @@ if __name__ == '__main__':
         print('Test on Reward Shaping Env')
         env = PortfolioEnv(pd_frame_dict, total_steps=max_path_length)
         env = obs_wrapper(env)
-        env = PortfolioRewardWrapper(env)
-        agent = build_agent(args, env)
+        reward_shape_env = PortfolioRewardWrapper(env)
+        agent = build_agent(args, reward_shape_env)
         agent.load_checkpoint(checkpoint_path)
-        deep_rl.test(env, agent, args.n_iter, seed=args.seed)
+        deep_rl.test(reward_shape_env, agent, args.n_iter, seed=args.seed)
 
         print('Test on Original Env')
-        env = env.unwrapped
         deep_rl.test(env, agent, args.n_iter, seed=args.seed)
