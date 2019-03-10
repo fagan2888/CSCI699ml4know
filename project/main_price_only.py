@@ -6,8 +6,8 @@ import torch.optim
 import torchlib.deep_rl as deep_rl
 import torchlib.deep_rl.policy_gradient.ppo as ppo
 
-from portfolio_mangement.agents import PriceOnlyPolicyModule
-from portfolio_mangement.envs import PortfolioEnvPriceOnlyRewardShape, PortfolioEnvPriceOnly
+from portfolio_mangement.agents import NewsOnlyPolicyModule
+from portfolio_mangement.envs import PortfolioEnv, PortfolioEnvNewsOnlyWrapper, PortfolioRewardWrapper
 from portfolio_mangement.utils.data import read_djia_observation
 
 
@@ -18,13 +18,13 @@ def make_parser():
     parser.add_argument('--discount', type=float, default=1.0)
     parser.add_argument('--gae_lambda', type=float, default=0.98)
     parser.add_argument('--clip_param', type=float, default=0.2)
-    parser.add_argument('--entropy_coef', type=float, default=0.01)
+    parser.add_argument('--entropy_coef', type=float, default=0.00)
     parser.add_argument('--value_coef', type=float, default=0.5)
     parser.add_argument('--n_iter', '-n', type=int, default=100)
     parser.add_argument('--batch_size', '-b', type=int, default=1000)
-    parser.add_argument('--recurrent', '-re', action='store_true')
-    parser.add_argument('--hidden_size', type=int, default=20)
-    parser.add_argument('--ep_len', '-ep', type=int, default=280)
+    parser.add_argument('--recurrent', '-re', action='store_false')
+    parser.add_argument('--hidden_size', type=int, default=16)
+    parser.add_argument('--ep_len', '-ep', type=int, default=100)
     parser.add_argument('--learning_rate', '-lr', type=float, default=5e-3)
     parser.add_argument('--nn_size', '-s', type=int, default=64)
     parser.add_argument('--seed', type=int, default=1)
@@ -39,7 +39,9 @@ def build_agent(args, env):
     recurrent = args.recurrent
     hidden_size = args.hidden_size
 
-    policy_net = PriceOnlyPolicyModule(args.nn_size, ob_dim, ac_dim, recurrent, hidden_size)
+    # policy_net = PriceOnlyPolicyModule(args.nn_size, ob_dim, ac_dim, recurrent, hidden_size)
+
+    policy_net = NewsOnlyPolicyModule(num_stocks=ac_dim - 1, seq_length=128)
 
     policy_optimizer = torch.optim.Adam(policy_net.parameters(), args.learning_rate)
 
@@ -77,7 +79,9 @@ if __name__ == '__main__':
 
     if not test:
         pd_frame_dict['DJIA'] = train_pd_frame
-        env = PortfolioEnvPriceOnlyRewardShape(pd_frame_dict, total_steps=max_path_length)
+        env = PortfolioEnv(pd_frame_dict, total_steps=max_path_length)
+        env = PortfolioEnvNewsOnlyWrapper(env, max_seq_length=128)
+        env = PortfolioRewardWrapper(env)
 
         agent = build_agent(args, env)
         ppo.train(args.exp_name, env, agent, args.n_iter, args.discount, args.batch_size, max_path_length,
@@ -86,11 +90,13 @@ if __name__ == '__main__':
     else:
         pd_frame_dict['DJIA'] = test_pd_frame
         print('Test on Reward Shaping Env')
-        env = PortfolioEnvPriceOnlyRewardShape(pd_frame_dict, total_steps=max_path_length)
+        env = PortfolioEnv(pd_frame_dict, total_steps=max_path_length)
+        env = PortfolioEnvNewsOnlyWrapper(env)
+        env = PortfolioRewardWrapper(env)
         agent = build_agent(args, env)
         agent.load_checkpoint(checkpoint_path)
         deep_rl.test(env, agent, args.n_iter, seed=args.seed)
 
         print('Test on Original Env')
-        env = PortfolioEnvPriceOnly(pd_frame_dict, total_steps=max_path_length)
+        env = env.unwrapped
         deep_rl.test(env, agent, args.n_iter, seed=args.seed)

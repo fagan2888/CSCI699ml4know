@@ -9,6 +9,7 @@ import gym
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from pytorch_pretrained_bert import BertTokenizer
 from torchlib.common import eps
 
 date_format = '%Y-%m-%d'
@@ -312,25 +313,14 @@ class PortfolioEnv(gym.Env):
         df_info[["portfolio_value", "market_value"]].plot(title=title, fig=plt.gcf(), rot=30)
 
 
-class PortfolioEnvPriceOnly(PortfolioEnv):
-    def __init__(self,
-                 pd_frame_dict,
-                 total_steps=260,  # 1 years
-                 trading_cost=0.0025,
-                 time_cost=0.00,
-                 start_date=None
-                 ):
-        super(PortfolioEnvPriceOnly, self).__init__(pd_frame_dict, total_steps,
-                                                    trading_cost, time_cost, start_date)
+# Observation wrapper for price only and news only env
+
+class PortfolioEnvPriceOnlyWrapper(gym.ObservationWrapper):
+    def __init__(self, env):
+        super(PortfolioEnvPriceOnlyWrapper, self).__init__(env)
         self.observation_space = gym.spaces.Box(-np.inf, np.inf, shape=(1,), dtype=np.float32)
 
-    def step(self, action):
-        observation, reward, done, info = super(PortfolioEnvPriceOnly, self).step(action)
-        close_ratio = self.get_normalized_close_ratio(observation)
-        return close_ratio, reward, done, info
-
-    def reset(self):
-        observation = super(PortfolioEnvPriceOnly, self).reset()
+    def observation(self, observation):
         return self.get_normalized_close_ratio(observation)
 
     def get_normalized_close_ratio(self, observation):
@@ -339,9 +329,55 @@ class PortfolioEnvPriceOnly(PortfolioEnv):
         return close_ratio
 
 
-class PortfolioEnvPriceOnlyRewardShape(PortfolioEnvPriceOnly):
-    def step(self, action):
-        close_ratio, reward, done, info = super(PortfolioEnvPriceOnlyRewardShape, self).step(action)
+class PortfolioEnvNewsOnlyWrapper(gym.ObservationWrapper):
+    def __init__(self, env: PortfolioEnv, tokenizer=None, max_seq_length=128):
+        super(PortfolioEnvNewsOnlyWrapper, self).__init__(env)
+        self.num_news = 25
+        self.max_seq_length = max_seq_length
+        if tokenizer:
+            self.tokenizer = tokenizer
+        else:
+            self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+
+        self.observation_space = gym.spaces.Box(-np.inf, np.inf, shape=(env.num_stocks, self.num_news,
+                                                                        max_seq_length), dtype=np.uint32)
+
+    def observation(self, observation):
+        news = observation.get_news()
+        observation = self.tokenize_news(news)
+        return observation
+
+    def tokenize_news(self, news):
+        """
+
+        Args:
+            news: a list of list of sentences
+
+        Returns: idx in the current tokenizer.
+
+        """
+        output = []
+        for stock_news in news:
+            stock_news_idx = []
+            assert len(stock_news) == self.num_news, "Number of news {} doesn't match required {}".format(
+                len(stock_news), self.num_news)
+            for each_news in stock_news:
+                tokens = self.tokenizer.tokenize(each_news)[:self.max_seq_length - 2]
+                tokens = ["[CLS]"] + tokens + ["[SEP]"]
+                input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
+                while len(input_ids) < self.max_seq_length:
+                    input_ids.append(0)
+                stock_news_idx.append(input_ids)
+            output.append(stock_news_idx)
+
+        output = np.array(output)
+        return output
+
+
+# reward shaping. Only care about whether we make money or lose money instead of the actual amount.
+
+class PortfolioRewardWrapper(gym.RewardWrapper):
+    def reward(self, reward):
         if reward > 0.0:
             reward = 1
         elif reward == 0.0:
@@ -349,4 +385,4 @@ class PortfolioEnvPriceOnlyRewardShape(PortfolioEnvPriceOnly):
         else:
             reward = -1
 
-        return close_ratio, reward, done, info
+        return reward
