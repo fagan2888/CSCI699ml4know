@@ -9,6 +9,7 @@ import gym
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from gym import spaces
 from pytorch_pretrained_bert import BertTokenizer
 from torchlib.common import eps
 
@@ -60,9 +61,12 @@ class DataGenerator(object):
         """
         self.pd_frame = pd_frame
         self.start_date = pd.Timestamp(start_date) if start_date else None
-        self.total_steps = total_steps
         any_stock_frame = pd_frame.get(list(pd_frame.keys())[0])
         self.date_index = any_stock_frame.index
+        if total_steps > 0:
+            self.total_steps = total_steps
+        else:
+            self.total_steps = self.date_index.size - 2
         self.earliest_record_date = pd.Timestamp(any_stock_frame.index.values[0])
         self.last_record_date = pd.Timestamp(any_stock_frame.index.values[-1])
         self.news_title = ['Top{}'.format(i + 1) for i in range(25)]
@@ -313,39 +317,30 @@ class PortfolioEnv(gym.Env):
         df_info[["portfolio_value", "market_value"]].plot(title=title, fig=plt.gcf(), rot=30)
 
 
-# Observation wrapper for price only and news only env
-
-class PortfolioEnvPriceOnlyWrapper(gym.ObservationWrapper):
-    def __init__(self, env):
-        super(PortfolioEnvPriceOnlyWrapper, self).__init__(env)
-        self.observation_space = gym.spaces.Box(-np.inf, np.inf, shape=(1,), dtype=np.float32)
+# Observation wrapper for both price and news
+class PortfolioEnvObsReshapeWrapper(gym.ObservationWrapper):
+    def __init__(self, env: PortfolioEnv,
+                 tokenizer=BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True),
+                 max_seq_length=128):
+        super(PortfolioEnvObsReshapeWrapper, self).__init__(env)
+        self.num_news = 25
+        self.max_seq_length = max_seq_length
+        self.tokenizer = tokenizer
+        self.observation_space = spaces.Tuple((spaces.Box(-np.inf, np.inf, shape=(1,), dtype=np.float32),
+                                               spaces.Box(-np.inf, np.inf, shape=(env.num_stocks, self.num_news,
+                                                                                  max_seq_length), dtype=np.uint32)
+                                               ))
 
     def observation(self, observation):
-        return self.get_normalized_close_ratio(observation)
+        close_ratio = self.get_normalized_close_ratio(observation)
+        news = observation.get_news()
+        news_obs = self.tokenize_news(news)
+        return (close_ratio, news_obs)
 
     def get_normalized_close_ratio(self, observation):
         close_ratio = observation.get_close_ratio()
         close_ratio = (close_ratio - 1.) * 100
         return close_ratio
-
-
-class PortfolioEnvNewsOnlyWrapper(gym.ObservationWrapper):
-    def __init__(self, env: PortfolioEnv, tokenizer=None, max_seq_length=128):
-        super(PortfolioEnvNewsOnlyWrapper, self).__init__(env)
-        self.num_news = 25
-        self.max_seq_length = max_seq_length
-        if tokenizer:
-            self.tokenizer = tokenizer
-        else:
-            self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
-
-        self.observation_space = gym.spaces.Box(-np.inf, np.inf, shape=(env.num_stocks, self.num_news,
-                                                                        max_seq_length), dtype=np.uint32)
-
-    def observation(self, observation):
-        news = observation.get_news()
-        observation = self.tokenize_news(news)
-        return observation
 
     def tokenize_news(self, news):
         """
@@ -375,6 +370,31 @@ class PortfolioEnvNewsOnlyWrapper(gym.ObservationWrapper):
 
         output = np.array(output)
         return output
+
+
+# Observation wrapper for price only and news only env
+
+class PortfolioEnvPriceOnlyWrapper(PortfolioEnvObsReshapeWrapper):
+    def __init__(self, env):
+        super(PortfolioEnvPriceOnlyWrapper, self).__init__(env)
+        self.observation_space = gym.spaces.Box(-np.inf, np.inf, shape=(1,), dtype=np.float32)
+
+    def observation(self, observation):
+        return self.get_normalized_close_ratio(observation)
+
+
+class PortfolioEnvNewsOnlyWrapper(PortfolioEnvObsReshapeWrapper):
+    def __init__(self, env: PortfolioEnv,
+                 tokenizer=BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True),
+                 max_seq_length=128):
+        super(PortfolioEnvNewsOnlyWrapper, self).__init__(env, tokenizer, max_seq_length)
+        self.observation_space = gym.spaces.Box(-np.inf, np.inf, shape=(env.num_stocks, self.num_news,
+                                                                        max_seq_length), dtype=np.uint32)
+
+    def observation(self, observation):
+        news = observation.get_news()
+        observation = self.tokenize_news(news)
+        return observation
 
 
 # reward shaping. Only care about whether we make money or lose money instead of the actual amount.

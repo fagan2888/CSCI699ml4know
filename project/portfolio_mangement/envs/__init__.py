@@ -1,2 +1,2 @@
 from .portfolio import PortfolioEnv, PortfolioEnvNewsOnlyWrapper, PortfolioEnvPriceOnlyWrapper, \
-    PortfolioRewardWrapper
+    PortfolioRewardWrapper, PortfolioEnvObsReshapeWrapper
