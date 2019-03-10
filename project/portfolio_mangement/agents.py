@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from pytorch_pretrained_bert import BertModel
 from torchlib.common import FloatTensor, LongTensor
-from torchlib.utils.torch_layer_utils import conv2d_bn_relu_block
+from torchlib.utils.torch_layer_utils import conv2d_bn_relu_block, freeze
 
 
 class PriceOnlyPolicyModule(nn.Module):
@@ -52,7 +52,7 @@ class NewsPredictorModule(nn.Module):
     A predictor for news data. The input is indices of 25
     """
 
-    def __init__(self, seq_length):
+    def __init__(self, seq_length, freeze_embedding=False):
         """
 
         Args:
@@ -63,6 +63,8 @@ class NewsPredictorModule(nn.Module):
         """
         super(NewsPredictorModule, self).__init__()
         self.embedding = BertModel.from_pretrained('bert-base-uncased').embeddings
+        if freeze_embedding:
+            freeze(self.embedding)
         self.model = nn.Sequential(
             *conv2d_bn_relu_block(in_channels=768, out_channels=64, kernel_size=(1, 8), stride=(1, 4),
                                   padding=(0, 2), normalize=False),
@@ -103,9 +105,9 @@ class NewsPredictorModule(nn.Module):
 
 
 class NewsOnlyPolicyModule(nn.Module):
-    def __init__(self, num_stocks, seq_length, recurrent=False, hidden_size=16):
+    def __init__(self, num_stocks, seq_length, recurrent=False, hidden_size=16, freeze_embedding=False):
         super(NewsOnlyPolicyModule, self).__init__()
-        self.model = NewsPredictorModule(seq_length)
+        self.model = NewsPredictorModule(seq_length, freeze_embedding=freeze_embedding)
 
         action_dim = num_stocks + 1
         random_number = np.random.randn(action_dim, action_dim)

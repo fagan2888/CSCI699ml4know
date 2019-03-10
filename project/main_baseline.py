@@ -23,7 +23,7 @@ def make_parser():
     parser.add_argument('--value_coef', type=float, default=0.5)
     parser.add_argument('--n_iter', '-n', type=int, default=100)
     parser.add_argument('--batch_size', '-b', type=int, default=1000)
-    parser.add_argument('--recurrent', '-re', action='store_false')
+    parser.add_argument('--recurrent', '-re', action='store_true')
     parser.add_argument('--hidden_size', type=int, default=16)
     parser.add_argument('--ep_len', '-ep', type=int, default=100)
     parser.add_argument('--learning_rate', '-lr', type=float, default=5e-3)
@@ -45,7 +45,7 @@ def build_agent(args, env):
         policy_net = PriceOnlyPolicyModule(args.nn_size, ob_dim, ac_dim, recurrent, hidden_size)
     elif args.observation == 'news':
         policy_net = NewsOnlyPolicyModule(num_stocks=ac_dim - 1, seq_length=128, recurrent=args.recurrent,
-                                          hidden_size=args.hidden_size)
+                                          hidden_size=args.hidden_size, freeze_embedding=True)
     else:
         raise ValueError('Unknown observation type {}'.format(args.observation))
 
