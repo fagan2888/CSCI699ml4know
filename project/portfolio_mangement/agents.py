@@ -90,13 +90,12 @@ class NewsPredictorModule(nn.Module):
         """
         state = state.type(LongTensor)
         batch_size, num_stocks, num_news, seq_length = state.shape
-        state = state.view(batch_size * num_stocks, num_news, seq_length)
-        state = state.view(batch_size * num_stocks, num_news * seq_length)
+        state = state.view(batch_size * num_stocks * num_news, seq_length)
         embedding = self.embedding.forward(state)
-        embedding = embedding.view(batch_size * num_stocks, num_news, num_stocks)
+        embedding = embedding.view(batch_size * num_stocks, num_news, seq_length, 768).permute(0, 3, 1, 2)
         cnn_out = self.model.forward(embedding)  # (batch*num_stock, num_news, 8, 16)
         # average with all the news
-        cnn_out = torch.mean(cnn_out, dim=1)  # (batch*num_stock, 8, 16)
+        cnn_out = torch.mean(cnn_out, dim=2)  # (batch, 16, num_stock, 8)
         x = cnn_out.view(cnn_out.size(0), -1)
         prob = self.linear.forward(x)
         prob = prob.view(batch_size, num_stocks)
@@ -104,16 +103,19 @@ class NewsPredictorModule(nn.Module):
 
 
 class NewsOnlyPolicyModule(nn.Module):
-    def __init__(self, num_stocks, seq_length, recurrent=False, hidden_size=20):
+    def __init__(self, num_stocks, seq_length, recurrent=False, hidden_size=16):
         super(NewsOnlyPolicyModule, self).__init__()
         self.model = NewsPredictorModule(seq_length)
+
+        action_dim = num_stocks + 1
+        random_number = np.random.randn(action_dim, action_dim)
+        random_number = np.dot(random_number.T, random_number)
+        self.logstd = torch.nn.Parameter(torch.tensor(random_number, requires_grad=True).type(FloatTensor))
 
         if recurrent:
             linear_size = hidden_size
         else:
             linear_size = num_stocks
-
-        action_dim = num_stocks + 1
 
         self.action_head = nn.Sequential(
             nn.Linear(linear_size, action_dim),
@@ -124,7 +126,7 @@ class NewsOnlyPolicyModule(nn.Module):
         self.recurrent = recurrent
 
         if self.recurrent:
-            self.gru = nn.GRU(linear_size, hidden_size)
+            self.gru = nn.GRU(num_stocks, hidden_size)
 
     def forward(self, state, hidden):
         x = self.model.forward(state)

@@ -362,7 +362,10 @@ class PortfolioEnvNewsOnlyWrapper(gym.ObservationWrapper):
             assert len(stock_news) == self.num_news, "Number of news {} doesn't match required {}".format(
                 len(stock_news), self.num_news)
             for each_news in stock_news:
-                tokens = self.tokenizer.tokenize(each_news)[:self.max_seq_length - 2]
+                try:
+                    tokens = self.tokenizer.tokenize(each_news)[:self.max_seq_length - 2]
+                except:
+                    tokens = []
                 tokens = ["[CLS]"] + tokens + ["[SEP]"]
                 input_ids = self.tokenizer.convert_tokens_to_ids(tokens)
                 while len(input_ids) < self.max_seq_length:
