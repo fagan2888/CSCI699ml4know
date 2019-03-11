@@ -12,6 +12,9 @@
 ## Data Source
 Dow Johns Index Average from 2008 to 2016.
 
+## Dependencies
+[My own Pytorch library torchlib](https://github.com/vermouth1992/torchlib)
+
 ## Midterm
 - Train a CNN sentiment sentence classifier, fix sentiment score module and train RL. The label is the stock price up/down.
 - Train a CNN sentiment sentence classification with RL end-to-end.
