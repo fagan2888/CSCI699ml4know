@@ -66,15 +66,13 @@ class NewsPredictorModule(nn.Module):
         if freeze_embedding:
             freeze(self.embedding)
         self.model = nn.Sequential(
-            *conv2d_bn_relu_block(in_channels=768, out_channels=64, kernel_size=(1, 8), stride=(1, 4),
-                                  padding=(0, 2), normalize=False),
-            *conv2d_bn_relu_block(in_channels=64, out_channels=32, kernel_size=(1, 4), stride=(1, 2),
-                                  padding=(0, 1), normalize=False),
-            *conv2d_bn_relu_block(in_channels=32, out_channels=16, kernel_size=(1, 4), stride=(1, 2),
-                                  padding=(0, 1), normalize=False),
+            *conv2d_bn_relu_block(in_channels=768, out_channels=8, kernel_size=(1, 8), stride=(1, 4),
+                                  padding=(0, 2), normalize=True),
+            *conv2d_bn_relu_block(in_channels=8, out_channels=4, kernel_size=(1, 8), stride=(1, 4),
+                                  padding=(0, 2), normalize=True),
         )
 
-        linear_size = 16 * seq_length // 16
+        linear_size = 4 * seq_length // 16
 
         self.linear = nn.Sequential(
             nn.Linear(linear_size, 1),
