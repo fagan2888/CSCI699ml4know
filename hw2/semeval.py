@@ -239,7 +239,7 @@ class SEMLoad(object):
 
 
 if __name__ == "__main__":
-    embedding_size = 50
+    embedding_size = 200
 
     os.makedirs('support/train/npy', exist_ok=True)
     os.makedirs('support/val/npy', exist_ok=True)

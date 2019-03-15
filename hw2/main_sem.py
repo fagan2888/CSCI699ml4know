@@ -46,8 +46,8 @@ def train(index_to_label):
 
     criterion = nn.CrossEntropyLoss()
     #  optimizer = optim.Adam(model.out_linear.parameters(), lr=0.0001)
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-    # optimizer = optim.Adadelta(model.parameters(), rho=0.95, eps=1e-6)
+    # optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adadelta(model.parameters(), rho=0.95, eps=1e-6)
 
     best_f1 = 0.0
     # train
@@ -80,6 +80,7 @@ def train(index_to_label):
 
     print("*" * 30)
     print("the best f1: {};".format(best_f1))
+    model.save(name="SEM_CNN")
     return model
 
 

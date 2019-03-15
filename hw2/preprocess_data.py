@@ -90,7 +90,7 @@ def rewrite_semEval2010_task8(infolder='data/', outfolder='support', label_file=
             output.append(" ".join([sent_id, label_index, e1_left_index, e1_right_index, e2_left_index,
                                     e2_right_index, all_tokens]))
 
-    train, val = train_test_split(output, test_size=0.1, random_state=1)
+    train, val = train_test_split(output, test_size=0.01, random_state=1)
     with open(os.path.join(outfolder, 'train.txt'), 'w') as f:
         f.write("\n".join(train))
         f.write("\n")
