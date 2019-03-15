@@ -25,16 +25,7 @@ def now():
     return str(time.strftime('%Y-%m-%d %H:%M%S'))
 
 
-def test(**kwargs):
-    pass
-
-
-def train(**kwargs):
-
-    label_to_index = read_relation2id()
-    index_to_label = {idx : label for label, idx in label_to_index.items()}
-
-    opt.parse(kwargs)
+def train(index_to_label):
     if opt.use_gpu:
         torch.cuda.set_device(opt.gpu_id)
 
@@ -42,9 +33,9 @@ def train(**kwargs):
     train_data = SEMData(opt.data_root, data_type='train')
     train_data_loader = DataLoader(train_data, opt.batch_size, shuffle=True, num_workers=opt.num_workers)
 
-    test_data = SEMData(opt.data_root, data_type='val')
-    test_data_loader = DataLoader(test_data, batch_size=opt.batch_size, shuffle=False, num_workers=opt.num_workers)
-    print('train data: {}; test data: {}'.format(len(train_data), len(test_data)))
+    val_data = SEMData(opt.data_root, data_type='val')
+    val_data_loader = DataLoader(val_data, batch_size=opt.batch_size, shuffle=False, num_workers=opt.num_workers)
+    print('train data: {}; test data: {}'.format(len(train_data), len(val_data)))
 
     # criterion and optimizer
     # lr = opt.lr
@@ -58,7 +49,7 @@ def train(**kwargs):
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     # optimizer = optim.Adadelta(model.parameters(), rho=0.95, eps=1e-6)
 
-    best_acc = 0.0
+    best_f1 = 0.0
     # train
     for epoch in range(opt.num_epochs):
 
@@ -71,16 +62,16 @@ def train(**kwargs):
                 data = list(map(Variable, data))
 
             model.zero_grad()
-            out = model(data[:-1])
+            out = model.forward(data[:-1])
             loss = criterion(out, data[-1])
             loss.backward()
             optimizer.step()
             total_loss += loss.data.item()
 
         train_avg_loss = total_loss / len(train_data_loader.dataset)
-        acc, rec, f1, eval_avg_loss, pred_y = eval(model, test_data_loader, index_to_label)
-        if best_acc < acc:
-            best_acc = acc
+        acc, rec, f1, eval_avg_loss, pred_y = eval(model, val_data_loader, index_to_label)
+        if best_f1 < f1:
+            best_f1 = f1
             # write_result(model.model_name, pred_y)
             model.save(name="SEM_CNN")
         # toy_acc, toy_f1, toy_loss = eval(model, train_data_loader, opt.rel_num)
@@ -88,7 +79,8 @@ def train(**kwargs):
             epoch + 1, opt.num_epochs, train_avg_loss, acc, rec, f1, eval_avg_loss))
 
     print("*" * 30)
-    print("the best acc: {};".format(best_acc))
+    print("the best f1: {};".format(best_f1))
+    return model
 
 
 def eval(model, test_data_loader, index_to_label):
@@ -123,8 +115,29 @@ def eval(model, test_data_loader, index_to_label):
     return p, r, f1, avg_loss / size, pred_y
 
 
+def predict(model, test_data_loader, index_to_label):
+    model.eval()
+    pred_y = []
+    for ii, data in enumerate(test_data_loader):
+        if opt.use_gpu:
+            data = list(map(lambda x: torch.LongTensor(x).cuda(), data))
+        else:
+            data = list(map(lambda x: torch.LongTensor(x), data))
+
+        out = model(data[:-1])
+
+        pred_y.extend(torch.max(out, 1)[1].data.cpu().numpy().tolist())
+
+    size = len(test_data_loader.dataset)
+
+    pred_y = [index_to_label[idx] for idx in pred_y]
+
+    model.train()
+    return pred_y
+
+
 def write_result(model_name, pred_y):
-    out = open('./semeval/sem_{}_result.txt'.format(model_name), 'w')
+    out = open('./support/sem_{}_result.txt'.format(model_name), 'w')
     size = len(pred_y)
     start = 8001
     end = start + size
@@ -133,5 +146,12 @@ def write_result(model_name, pred_y):
 
 
 if __name__ == "__main__":
+    label_to_index = read_relation2id()
+    index_to_label = {idx: label for label, idx in label_to_index.items()}
     os.makedirs('checkpoint', exist_ok=True)
-    train()
+    model = train(index_to_label)
+
+    test_data = SEMData(opt.data_root, data_type='test')
+    test_data_loader = DataLoader(test_data, opt.batch_size, shuffle=False, num_workers=opt.num_workers)
+    pred_y = predict(model, test_data_loader, index_to_label)
+    write_result(model.model_name, pred_y)

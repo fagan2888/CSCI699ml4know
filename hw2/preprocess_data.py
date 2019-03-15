@@ -99,7 +99,7 @@ def rewrite_semEval2010_task8(infolder='data/', outfolder='support', label_file=
         f.write("\n")
 
     print('Processing testing data')
-    filepath = os.path.join(infolder, 'SemEval2010_task8_testing', 'TEST_FILE.TXT')
+    filepath = os.path.join(infolder, 'SemEval2010_task8_testing', 'TEST_FILE.txt')
     output = []
     with open(filepath, 'r') as f:
         for _ in tqdm(range(2717)):

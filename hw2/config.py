@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import torch
+
 data_dic = {
     'SEM': {
         'data_root': './support/',
@@ -23,7 +25,7 @@ class DefaultConfig(object):
 
     seed = 99
     batch_size = 128  # batch size
-    use_gpu = False  # user GPU or not
+    use_gpu = torch.cuda.is_available()  # user GPU or not
     gpu_id = 0
     num_workers = 0  # how many workers for loading data
 
