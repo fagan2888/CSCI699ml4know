@@ -35,21 +35,21 @@ class DefaultConfig(object):
     # vocab_size = 114042 + 2  # vocab + UNK + BLANK
     vocab_size = data_dic[data]['vocab_size']  # vocab + UNK + BLANK
     rel_num = data_dic[data]['rel_num']
-    word_dim = 200
+    word_dim = 50
     pos_dim = 5
     pos_size = limit * 2 + 2
 
     norm_emb = True
 
-    num_epochs = 50  # the number of epochs for training
+    num_epochs = 40  # the number of epochs for training
     drop_out = 0.5
     lr = 0.003  # initial learning rate
     lr_decay = 0.95  # when val_loss increase, lr = lr*lr_decay
     weight_decay = 0.  # optimizer parameter
 
     # Conv
-    filters = [3]
-    filters_num = 230
+    filters = [2, 3, 4, 5, 6, 7, 8]
+    filters_num = 32
     sen_feature_dim = filters_num
 
     rel_dim = filters_num * len(filters)

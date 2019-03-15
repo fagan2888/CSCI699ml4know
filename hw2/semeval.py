@@ -236,18 +236,3 @@ class SEMLoad(object):
             return x + self.limit + 1
         if x > self.limit:
             return self.limit * 2 + 1
-
-
-if __name__ == "__main__":
-    embedding_size = 200
-
-    os.makedirs('support/train/npy', exist_ok=True)
-    os.makedirs('support/val/npy', exist_ok=True)
-    os.makedirs('support/test/npy', exist_ok=True)
-
-    data = SEMLoad('support/', data_type='train', embedding_size=embedding_size)
-    data.save()
-    data = SEMLoad('support/', data_type='val', embedding_size=embedding_size)
-    data.save()
-    data = SEMLoad('support/', data_type='test', embedding_size=embedding_size)
-    data.save()

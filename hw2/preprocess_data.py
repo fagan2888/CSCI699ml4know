@@ -8,6 +8,8 @@ import nltk
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
+from semeval import SEMLoad
+
 
 def read_relation2id(filepath='support/relation2id.txt'):
     label_to_index = {}
@@ -90,7 +92,7 @@ def rewrite_semEval2010_task8(infolder='data/', outfolder='support', label_file=
             output.append(" ".join([sent_id, label_index, e1_left_index, e1_right_index, e2_left_index,
                                     e2_right_index, all_tokens]))
 
-    train, val = train_test_split(output, test_size=0.01, random_state=1)
+    train, val = train_test_split(output, test_size=0.02, random_state=1)
     with open(os.path.join(outfolder, 'train.txt'), 'w') as f:
         f.write("\n".join(train))
         f.write("\n")
@@ -135,3 +137,16 @@ def rewrite_semEval2010_task8(infolder='data/', outfolder='support', label_file=
 
 if __name__ == '__main__':
     rewrite_semEval2010_task8()
+
+    embedding_size = 50
+
+    os.makedirs('support/train/npy', exist_ok=True)
+    os.makedirs('support/val/npy', exist_ok=True)
+    os.makedirs('support/test/npy', exist_ok=True)
+
+    data = SEMLoad('support/', data_type='train', embedding_size=embedding_size)
+    data.save()
+    data = SEMLoad('support/', data_type='val', embedding_size=embedding_size)
+    data.save()
+    data = SEMLoad('support/', data_type='test', embedding_size=embedding_size)
+    data.save()

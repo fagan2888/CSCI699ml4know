@@ -2,13 +2,12 @@
 
 import os
 import time
+import numpy as np
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import f1_score
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from preprocess_data import read_relation2id
@@ -46,9 +45,10 @@ def train(index_to_label):
 
     criterion = nn.CrossEntropyLoss()
     #  optimizer = optim.Adam(model.out_linear.parameters(), lr=0.0001)
-    # optimizer = optim.Adam(model.parameters(), lr=0.001)
-    optimizer = optim.Adadelta(model.parameters(), rho=0.95, eps=1e-6)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    # optimizer = optim.Adadelta(model.parameters(), rho=0.95, eps=1e-6)
 
+    best_loss = np.inf
     best_f1 = 0.0
     # train
     for epoch in range(opt.num_epochs):
@@ -70,17 +70,18 @@ def train(index_to_label):
 
         train_avg_loss = total_loss / len(train_data_loader.dataset)
         acc, rec, f1, eval_avg_loss, pred_y = eval(model, val_data_loader, index_to_label)
-        if best_f1 < f1:
+        if eval_avg_loss < best_loss:
+            best_loss = eval_avg_loss
             best_f1 = f1
             # write_result(model.model_name, pred_y)
             model.save(name="SEM_CNN")
         # toy_acc, toy_f1, toy_loss = eval(model, train_data_loader, opt.rel_num)
-        print('Epoch {}/{}: train loss: {}; test accuracy: {}, test recall: {}, test f1:{},  test loss {}'.format(
-            epoch + 1, opt.num_epochs, train_avg_loss, acc, rec, f1, eval_avg_loss))
+        print(
+            'Epoch {}/{}: train loss: {:.4f}; test accuracy: {:.4f}, test recall: {:.4f}, test f1:{:.4f},  test loss {:.4f}'.format(
+                epoch + 1, opt.num_epochs, train_avg_loss, acc, rec, f1, eval_avg_loss))
 
     print("*" * 30)
     print("the best f1: {};".format(best_f1))
-    model.save(name="SEM_CNN")
     return model
 
 
@@ -138,7 +139,8 @@ def predict(model, test_data_loader, index_to_label):
 
 
 def write_result(model_name, pred_y):
-    out = open('./support/sem_{}_result.txt'.format(model_name), 'w')
+    os.makedirs('result', exist_ok=True)
+    out = open('result/sem_{}_result.txt'.format(model_name), 'w')
     size = len(pred_y)
     start = 8001
     end = start + size
@@ -152,6 +154,7 @@ if __name__ == "__main__":
     os.makedirs('checkpoint', exist_ok=True)
     model = train(index_to_label)
 
+    model.load('checkpoint/PCNN_SEM_CNN.pth')
     test_data = SEMData(opt.data_root, data_type='test')
     test_data_loader = DataLoader(test_data, opt.batch_size, shuffle=False, num_workers=opt.num_workers)
     pred_y = predict(model, test_data_loader, index_to_label)
