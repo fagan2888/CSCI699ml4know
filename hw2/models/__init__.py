@@ -1,1 +1,1 @@
-from .PCNN import PCNN
+from .PCNN import PCNN, PCNNTwoHead

@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 
-import torch
 import time
 
+import torch
+import torch.nn as nn
 
-class BasicModule(torch.nn.Module):
+
+class BasicModule(nn.Module):
     '''
     封装了nn.Module,主要是提供了save和load两个方法
     '''
 
     def __init__(self):
         super(BasicModule, self).__init__()
-        self.model_name=str(type(self))  # model name
+        self.model_name = str(type(self))  # model name
 
     def load(self, path):
         '''
