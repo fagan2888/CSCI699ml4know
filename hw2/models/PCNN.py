@@ -152,3 +152,10 @@ class PCNNTwoHead(PCNN):
         true_label_score = self.out_linear(x)
         other_label_score = self.out_linear_other(x)
         return true_label_score, other_label_score
+
+
+class PCNNRankLoss(PCNN):
+    def __init__(self, opt):
+        opt.rel_num -= 1
+        super(PCNNRankLoss, self).__init__(opt)
+        self.model_name = 'PCNNRankLoss'

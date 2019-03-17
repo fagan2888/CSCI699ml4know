@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import os
+import pprint
 import time
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from config import opt
-from models import PCNNTwoHead
+from models import get_model
+from models.loss import get_loss_classifier
 from preprocess_data import read_relation2id
 from semeval import SEMData
 from utils.scorer import evaluate
@@ -22,60 +23,7 @@ def now():
     return str(time.strftime('%Y-%m-%d %H:%M%S'))
 
 
-def two_step_loss(score, label):
-    """ Separate the "other" label. Use a binary classifier to detect "other" label and another
-    18-way classifier to detect true labels.
-
-    Args:
-        true_label_score: tensor of shape (batch_size, 18)
-        other_label_score: tensor of shape (batch_size, 2)
-        label: (batch_size)
-
-    Returns: loss
-
-    """
-    true_label_score, other_label_score = score
-    not_other = label != 18
-    binary_loss = F.cross_entropy(other_label_score, not_other.type(torch.LongTensor))
-
-    # for class loss, we only consider those which is not "Other"
-    true_label_score_not_other = true_label_score[not_other]
-    not_other_label = label[not_other]
-    class_loss = F.cross_entropy(true_label_score_not_other, not_other_label)
-    return binary_loss + class_loss
-
-
-def get_loss(type='cross_entropy'):
-    if type == 'cross_entropy':
-        return F.cross_entropy
-
-    elif type == 'two_step':
-        return two_step_loss
-
-    else:
-        raise NotImplementedError
-
-
-def cross_entropy_classifier(score):
-    return torch.max(score, 1)[1].data
-
-
-def two_step_classifier(score):
-    true_label_score, other_label_score = score
-    label = torch.max(true_label_score, 1)[1].data
-    other_label = torch.max(other_label_score, 1)[1].data
-    label[other_label == 0] = 18
-    return label
-
-
-def get_classifier(type='cross_entropy'):
-    if type == 'cross_entropy':
-        return cross_entropy_classifier
-    elif type == 'two_step':
-        return two_step_classifier
-
-
-def train(index_to_label, loss_fn, classifier_fn):
+def train(model, index_to_label, loss_fn, classifier_fn):
     if opt.use_gpu:
         torch.cuda.set_device(opt.gpu_id)
 
@@ -89,12 +37,10 @@ def train(index_to_label, loss_fn, classifier_fn):
 
     # criterion and optimizer
     # lr = opt.lr
-    model = PCNNTwoHead(opt)
     if opt.use_gpu:
         torch.cuda.set_device(opt.gpu_id)
         model.cuda()
 
-    criterion = get_loss(loss_type)
     #  optimizer = optim.Adam(model.out_linear.parameters(), lr=0.0001)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     # optimizer = optim.Adadelta(model.parameters(), rho=0.95, eps=1e-6)
@@ -114,7 +60,7 @@ def train(index_to_label, loss_fn, classifier_fn):
 
             model.zero_grad()
             out = model.forward(data[:-1])
-            loss = criterion(out, data[-1])
+            loss = loss_fn(out, data[-1])
             loss.backward()
             optimizer.step()
             total_loss += loss.data.item()
@@ -133,7 +79,6 @@ def train(index_to_label, loss_fn, classifier_fn):
 
     print("*" * 30)
     print("the best f1: {};".format(best_f1))
-    return model
 
 
 def eval(model, test_data_loader, index_to_label, loss_fn, classifier_fn):
@@ -201,17 +146,36 @@ def write_result(model_name, pred_y):
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser('Argument parser for Relation Extraction')
+    parser.add_argument('--model_name', choices=['PCNN', 'PCNNTwoHead', 'PCNNRankLoss'], required=True)
+
+    args = vars(parser.parse_args())
+    pprint.pprint(args)
+
+    model_name = args['model_name']
+
+    model = get_model(model_name)(opt)
+
+    if model_name == 'PCNN':
+        loss_type = 'cross_entropy'
+    elif model_name == 'PCNNTwoHead':
+        loss_type = 'two_step'
+    elif model_name == 'PCNNRankLoss':
+        loss_type = 'rank'
+    else:
+        raise NotImplementedError
+
     label_to_index = read_relation2id()
     index_to_label = {idx: label for label, idx in label_to_index.items()}
     os.makedirs('checkpoint', exist_ok=True)
 
-    loss_type = 'two_step'
-    loss_fn = get_loss(loss_type)
-    classifier_fn = get_classifier(loss_type)
+    loss_fn, classifier_fn = get_loss_classifier(loss_type)
 
-    model = train(index_to_label, loss_fn, classifier_fn)
+    train(model, index_to_label, loss_fn, classifier_fn)
 
-    model.load('checkpoint/PCNN_SEM_CNN.pth')
+    model.load('checkpoint/{}_SEM_CNN.pth'.format(model_name))
     test_data = SEMData(opt.data_root, data_type='test')
     test_data_loader = DataLoader(test_data, opt.batch_size, shuffle=False, num_workers=opt.num_workers)
     pred_y = predict(model, test_data_loader, index_to_label, classifier_fn)
