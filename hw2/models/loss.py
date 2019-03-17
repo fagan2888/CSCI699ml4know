@@ -16,7 +16,11 @@ def two_step_loss(score, label):
     """
     true_label_score, other_label_score = score
     not_other = label != 18
-    binary_loss = F.cross_entropy(other_label_score, not_other.type(torch.LongTensor))
+
+    if torch.cuda.is_available():
+        binary_loss = F.cross_entropy(other_label_score, not_other.type(torch.cuda.LongTensor))
+    else:
+        binary_loss = F.cross_entropy(other_label_score, not_other.type(torch.LongTensor))
 
     # for class loss, we only consider those which is not "Other"
     true_label_score_not_other = true_label_score[not_other]
@@ -61,7 +65,10 @@ def rank_loss(score, label, margin=1., gamma=1.):
 
     negative_label_score = score.gather(dim=1, index=final_index.unsqueeze(-1)).squeeze(1)
 
-    positive_score = torch.log1p(torch.exp(gamma * (margin - score_label))) * mask.type(torch.FloatTensor)
+    if torch.cuda.is_available():
+        positive_score = torch.log1p(torch.exp(gamma * (margin - score_label))) * mask.type(torch.cuda.FloatTensor)
+    else:
+        positive_score = torch.log1p(torch.exp(gamma * (margin - score_label))) * mask.type(torch.FloatTensor)
     negative_score = torch.log1p(torch.exp(gamma * (-margin + negative_label_score)))
 
     # print(positive_score.shape, negative_score.shape)

@@ -6,7 +6,7 @@ data_dic = {
     'SEM': {
         'data_root': './support/',
         'w2v_path': './support/train/npy/w2v.npy',
-        'vocab_size': 4812,  # vocab + UNK + BLANK
+        'vocab_size': 22316,  # vocab + UNK + BLANK
         'rel_num': 19
     }
 }
@@ -41,7 +41,7 @@ class DefaultConfig(object):
 
     norm_emb = True
 
-    num_epochs = 40  # the number of epochs for training
+    num_epochs = 100  # the number of epochs for training
     drop_out = 0.5
     lr = 0.003  # initial learning rate
     lr_decay = 0.95  # when val_loss increase, lr = lr*lr_decay
@@ -49,7 +49,7 @@ class DefaultConfig(object):
 
     # Conv
     filters = [2, 3, 4, 5, 6, 7, 8]
-    filters_num = 32
+    filters_num = 64
     sen_feature_dim = filters_num
 
     rel_dim = filters_num * len(filters)

@@ -45,12 +45,16 @@ def train(model, index_to_label, loss_fn, classifier_fn):
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     # optimizer = optim.Adadelta(model.parameters(), rho=0.95, eps=1e-6)
 
+    # decay learning rate by 0.1 every 50 epochs
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
+
     best_loss = np.inf
     best_f1 = 0.0
     # train
     for epoch in range(opt.num_epochs):
 
         total_loss = 0.0
+        scheduler.step()
 
         for ii, data in enumerate(tqdm(train_data_loader)):
             if opt.use_gpu:
@@ -67,10 +71,9 @@ def train(model, index_to_label, loss_fn, classifier_fn):
 
         train_avg_loss = total_loss / len(train_data_loader.dataset)
         acc, rec, f1, eval_avg_loss, pred_y = eval(model, val_data_loader, index_to_label, loss_fn, classifier_fn)
-        if eval_avg_loss < best_loss:
+        if best_f1 < f1:
             best_loss = eval_avg_loss
             best_f1 = f1
-            # write_result(model.model_name, pred_y)
             model.save(name="SEM_CNN")
         # toy_acc, toy_f1, toy_loss = eval(model, train_data_loader, opt.rel_num)
         print(
