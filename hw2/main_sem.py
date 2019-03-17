@@ -23,7 +23,7 @@ def now():
     return str(time.strftime('%Y-%m-%d %H:%M%S'))
 
 
-def train(model, index_to_label, loss_fn, classifier_fn):
+def train(model, optimizer, index_to_label, loss_fn, classifier_fn):
     if opt.use_gpu:
         torch.cuda.set_device(opt.gpu_id)
 
@@ -42,8 +42,6 @@ def train(model, index_to_label, loss_fn, classifier_fn):
         model.cuda()
 
     #  optimizer = optim.Adam(model.out_linear.parameters(), lr=0.0001)
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-    # optimizer = optim.Adadelta(model.parameters(), rho=0.95, eps=1e-6)
 
     # decay learning rate by 0.1 every 50 epochs
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.1)
@@ -162,11 +160,17 @@ if __name__ == "__main__":
 
     model = get_model(model_name)(opt)
 
-    if model_name == 'PCNN' or model_name == 'RNNAttention':
+    if model_name == 'PCNN':
+        optimizer = optim.Adam(model.parameters(), lr=0.001)
+        loss_type = 'cross_entropy'
+    elif model_name == 'RNNAttention':
+        optimizer = optim.Adadelta(model.parameters(), rho=0.95, eps=1e-6, weight_decay=1e-4)
         loss_type = 'cross_entropy'
     elif model_name == 'PCNNTwoHead':
+        optimizer = optim.Adam(model.parameters(), lr=0.001)
         loss_type = 'two_step'
     elif model_name == 'PCNNRankLoss' or model_name == 'RNNAttentionRankLoss':
+        optimizer = optim.Adam(model.parameters(), lr=0.001)
         loss_type = 'rank'
     else:
         raise NotImplementedError
@@ -177,7 +181,7 @@ if __name__ == "__main__":
 
     loss_fn, classifier_fn = get_loss_classifier(loss_type)
 
-    train(model, index_to_label, loss_fn, classifier_fn)
+    train(model, optimizer, index_to_label, loss_fn, classifier_fn)
 
     model.load('checkpoint/{}_SEM_CNN.pth'.format(model_name))
     test_data = SEMData(opt.data_root, data_type='test')

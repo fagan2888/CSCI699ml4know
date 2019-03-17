@@ -6,6 +6,7 @@ Zhang (2015). Relation classification via recurrent neural network.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 from .BasicModule import BasicModule
 
@@ -27,8 +28,32 @@ class RNNAttention(BasicModule):
                               bidirectional=True)
 
         self.attention_matrix = nn.Parameter(torch.randn(64, 1), requires_grad=True)
+        self.embedding_dropout = nn.Dropout(0.3)
         self.dropout = nn.Dropout(self.opt.drop_out)
         self.out_linear = nn.Linear(64, self.opt.rel_num)
+        # self.out_linear = nn.Linear(64 + self.opt.word_dim * 6, self.opt.rel_num)
+
+        self.init_word_emb()
+        self.init_model_weight()
+
+    def init_word_emb(self):
+
+        w2v = torch.from_numpy(np.load(self.opt.w2v_path))
+
+        # w2v = torch.div(w2v, w2v.norm(2, 1).unsqueeze(1))
+        # w2v[w2v != w2v] = 0.0
+
+        if self.opt.use_gpu:
+            self.word_embs.weight.data.copy_(w2v.cuda())
+        else:
+            self.word_embs.weight.data.copy_(w2v)
+
+    def init_model_weight(self):
+        '''
+        use xavier to init
+        '''
+        nn.init.xavier_normal_(self.out_linear.weight)
+        nn.init.constant_(self.out_linear.bias, 0.)
 
     def forward(self, x):
         # we don't use lexical feature in this model
@@ -47,6 +72,8 @@ class RNNAttention(BasicModule):
 
         sentence_feature = torch.cat([word_emb, left_emb, right_emb], 2)  # (batch_size, max_len, word_dim + pos_dim *2)
 
+        sentence_feature = self.embedding_dropout.forward(sentence_feature)
+
         output, _ = self.bilstm.forward(sentence_feature)
 
         M = torch.tanh(output)
@@ -60,6 +87,8 @@ class RNNAttention(BasicModule):
         r = torch.bmm(alpha, M).squeeze(dim=1)  # (batch_size, 1, hidden_size) -> (batch_size, hidden_size)
 
         h = torch.tanh(r)
+
+        # h = torch.cat((lexical_level_emb, h), dim=1)
 
         h = self.dropout.forward(h)
 
