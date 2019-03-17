@@ -1,4 +1,5 @@
 from .PCNN import PCNN, PCNNTwoHead, PCNNRankLoss
+from .RNN import RNNAttention, RNNAttentionRankLoss
 
 
 def get_model(model_name):
@@ -8,5 +9,9 @@ def get_model(model_name):
         return PCNNTwoHead
     elif model_name == 'PCNNRankLoss':
         return PCNNRankLoss
+    elif model_name == 'RNNAttention':
+        return RNNAttention
+    elif model_name == 'RNNAttentionRankLoss':
+        return RNNAttentionRankLoss
     else:
         raise NotImplementedError

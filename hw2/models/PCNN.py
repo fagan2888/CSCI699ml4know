@@ -71,7 +71,7 @@ class PCNN(BasicModule):
 
         # No USE: lexical word embedding
         batch_size = lexical_feature.size(0)
-        lexical_level_emb = self.word_embs(lexical_feature)  # (batch_size, 6, word_dim
+        lexical_level_emb = self.word_embs(lexical_feature)  # (batch_size, 6, word_dim)
         lexical_level_emb = lexical_level_emb.view(batch_size, -1)
         # lexical_level_emb = lexical_level_emb.sum(1)
 

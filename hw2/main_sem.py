@@ -152,7 +152,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser('Argument parser for Relation Extraction')
-    parser.add_argument('--model_name', choices=['PCNN', 'PCNNTwoHead', 'PCNNRankLoss'], required=True)
+    parser.add_argument('--model_name', choices=['PCNN', 'PCNNTwoHead', 'PCNNRankLoss', 'RNNAttention',
+                                                 'RNNAttentionRankLoss'], required=True)
 
     args = vars(parser.parse_args())
     pprint.pprint(args)
@@ -161,11 +162,11 @@ if __name__ == "__main__":
 
     model = get_model(model_name)(opt)
 
-    if model_name == 'PCNN':
+    if model_name == 'PCNN' or model_name == 'RNNAttention':
         loss_type = 'cross_entropy'
     elif model_name == 'PCNNTwoHead':
         loss_type = 'two_step'
-    elif model_name == 'PCNNRankLoss':
+    elif model_name == 'PCNNRankLoss' or model_name == 'RNNAttentionRankLoss':
         loss_type = 'rank'
     else:
         raise NotImplementedError
