@@ -38,4 +38,8 @@ Please put the data folder under hw2/
 python3 preprocess_data.py
 python3 main_sem.py --model_name PCNNRankLoss
 ```
+The output will be placed under result folder and contain the name of model_name. The test_output.txt is the one we ran in our own machine.
 Note that each time the performance would vary. But you should be able to get 79% - 83% F1 score on validation data.
+
+## Others
+Our code will use GPU automatically if the machine has one.
