@@ -30,6 +30,9 @@ See requirements.txt
 pip install -r requirements.txt
 ```
 
+## Data preparation
+Please put the data folder under hw2/
+
 ## How to reproduce the result
 ```bash
 python3 preprocess_data.py
