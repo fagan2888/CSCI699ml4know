@@ -23,3 +23,16 @@ python utils/scorer.py
 ```
 
 , or you can call function `evaluate(y_true, y_pred)` directly in other python program.
+
+## Requirements
+See requirements.txt
+```bash
+pip install -r requirements.txt
+```
+
+## How to reproduce the result
+```bash
+python3 preprocess_data.py
+python3 main_sem.py --model_name PCNNRankLoss
+```
+Note that each time the performance would vary. But you should be able to get 79% - 83% F1 score on validation data.

@@ -1,0 +1,5 @@
+nltk==3.4
+tqdm==4.30.0
+numpy==1.16.2
+torch==1.0.1.post2
+scikit_learn==0.20.3
