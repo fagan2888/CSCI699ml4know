@@ -61,10 +61,7 @@ class DualAttentionRNN(nn.Module):
         if regression:
             self.output_linear = nn.Linear(temporal_hidden_size, 1)
         else:
-            self.output_linear = nn.Sequential(
-                nn.Linear(temporal_hidden_size, 2),
-                nn.Softmax(dim=-1),
-            )
+            self.output_linear = nn.Linear(temporal_hidden_size, 2)
 
         self.num_driving_series = num_driving_series
         self.window_size = window_size

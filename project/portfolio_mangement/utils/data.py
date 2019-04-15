@@ -7,6 +7,8 @@ import os
 import numpy as np
 import pandas as pd
 
+from ..sentiment_analyzer import NLTKSentimentAnalyzer
+
 
 def read_djia_observation(folder_path):
     """ Read Dow Johns Index Average as observation in RL environment
@@ -45,7 +47,7 @@ def read_djia_sentiment(folder_path):
 
 
 def get_djia_dual_attention_path(window_length, sentiment_analyzer, regression, train_val_test_split):
-    return "{}_{}_{}_{}.npz".format(window_length, sentiment_analyzer, regression, train_val_test_split)
+    return "data/{}_{}_{}_{}.npz".format(window_length, sentiment_analyzer, regression, train_val_test_split)
 
 
 def create_djia_dual_attention_dataset(folder_path, window_length, sentiment_analyzer, regression=False,
@@ -93,6 +95,10 @@ def create_djia_dual_attention_dataset(folder_path, window_length, sentiment_ana
         news_sentiment = np.array(news_sentiment)
         label = np.array(label)
 
+        history = history.astype(np.float32)
+        news_sentiment = news_sentiment.astype(np.float32)
+        label = label.astype(np.float32)
+
         if not regression:
             label = (label > 0).astype(np.int)
 
@@ -100,6 +106,49 @@ def create_djia_dual_attention_dataset(folder_path, window_length, sentiment_ana
 
     djia_pd_frame = read_djia_observation(folder_path)
 
+    train_ratio, val_ratio, test_ratio = train_val_test_split
+    assert np.allclose(train_ratio + val_ratio + test_ratio, 1.0)
+
+    num_train = int(train_ratio * len(djia_pd_frame))
+    num_train_val = int((train_ratio + val_ratio) * len(djia_pd_frame))
+    train_pd_frame, val_pd_frame, test_pd_frame = np.split(djia_pd_frame, [num_train, num_train_val])
+
+    train_history, train_news, train_label = create_dataset(train_pd_frame)
+    val_history, val_news, val_label = create_dataset(val_pd_frame)
+    test_history, test_news, test_label = create_dataset(test_pd_frame)
+
+    np.savez_compressed(out_data_path,
+                        train_history=train_history, train_news=train_news, train_label=train_label,
+                        val_history=val_history, val_news=val_news, val_label=val_label,
+                        test_history=test_history, test_news=test_news, test_label=test_label)
+
+    return (train_history, train_news, train_label), (val_history, val_news, val_label), \
+           (test_history, test_news, test_label)
+
+
+def load_djia_dual_attention_dataset(window_length, sentiment_analyzer, regression=False,
+                                     train_val_test_split=(0.8, 0.1, 0.1)):
+    path = get_djia_dual_attention_path(window_length, sentiment_analyzer, regression, train_val_test_split)
+    if os.path.isfile(path):
+        data = np.load(path)
+        train_history = data['train_history']
+        train_news = data['train_news']
+        train_label = data['train_label']
+        val_history = data['val_history']
+        val_news = data['val_news']
+        val_label = data['val_label']
+        test_history = data['test_history']
+        test_news = data['test_news']
+        test_label = data['test_label']
+
+        return (train_history, train_news, train_label), (val_history, val_news, val_label), \
+               (test_history, test_news, test_label)
+
+    else:
+        return create_djia_dual_attention_dataset('data/stocknews', window_length, sentiment_analyzer,
+                                                  regression, train_val_test_split)
+
 
 if __name__ == '__main__':
-    djia_pd_frame = read_djia_observation('../../data/stocknews')
+    analyzer = NLTKSentimentAnalyzer()
+    out = load_djia_dual_attention_dataset(3, analyzer, regression=False, train_val_test_split=(0.8, 0.1, 0.1))
