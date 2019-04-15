@@ -4,6 +4,7 @@ Data utilities for import various data source and formatting
 
 import os
 
+import numpy as np
 import pandas as pd
 
 
@@ -42,6 +43,7 @@ def read_djia_sentiment(folder_path):
     """
     return [[]], []
 
+
 def get_djia_dual_attention_path(window_length, sentiment_analyzer, regression, train_val_test_split):
     return "{}_{}_{}_{}.npz".format(window_length, sentiment_analyzer, regression, train_val_test_split)
 
@@ -65,14 +67,38 @@ def create_djia_dual_attention_dataset(folder_path, window_length, sentiment_ana
                                                      train_val_test_split)
 
     def create_dataset(pd_frame):
-        pass
+        close_price = pd_frame['Close'].values
+        close_ratio = close_price[1:] / close_price[:-1]
+        close_ratio = (close_ratio - 1.) * 100  # (1988,)
 
+        all_news_sentiment = []
+        for news_index in range(25):
+            news = pd_frame['Top{}'.format(news_index + 1)].values[1:]  # ignore the first one.
+            current_news_sentiment = []
+            for n in news:
+                current_news_sentiment.append(sentiment_analyzer.predict(n))
+            current_news_sentiment = np.array(current_news_sentiment)
+            all_news_sentiment.append(current_news_sentiment)
 
-    history = []
-    news_sentiment = []
-    label = []
+        all_news_sentiment = np.array(all_news_sentiment)  # (25, 1988)
+
+        history = []
+        news_sentiment = []
+        label = []
+        for i in range(close_ratio.shape[0] - window_length):
+            history.append(close_ratio[i:i + window_length])
+            label.append(close_ratio[i + window_length])
+            news_sentiment.append(all_news_sentiment[:, i:i + window_length])
+        history = np.array(history)
+        news_sentiment = np.array(news_sentiment)
+        label = np.array(label)
+
+        if not regression:
+            label = (label > 0).astype(np.int)
+
+        return history, news_sentiment, label
+
     djia_pd_frame = read_djia_observation(folder_path)
-
 
 
 if __name__ == '__main__':
