@@ -80,8 +80,8 @@ class DualAttentionRNN(nn.Module):
 
         """
         batch_size = history.shape[0]
-        input_hx = torch.zeros(batch_size, self.input_hidden_size)
-        input_cx = torch.zeros(batch_size, self.input_hidden_size)
+        input_hx = torch.zeros(batch_size, self.input_hidden_size).type(history.type())
+        input_cx = torch.zeros(batch_size, self.input_hidden_size).type(history.type())
         input_hidden_out = []
         for i in range(self.window_size):
             weights = self.input_attention.forward(input_hx, input_cx, driving_series)
@@ -91,8 +91,8 @@ class DualAttentionRNN(nn.Module):
 
         input_hidden_out = torch.stack(input_hidden_out, dim=1)  # (batch_size, T, input_hidden_size)
 
-        output_hx = torch.zeros(batch_size, self.temporal_hidden_size)
-        output_cx = torch.zeros(batch_size, self.temporal_hidden_size)
+        output_hx = torch.zeros(batch_size, self.temporal_hidden_size).type(history.type())
+        output_cx = torch.zeros(batch_size, self.temporal_hidden_size).type(history.type())
         for i in range(self.window_size):
             weights = self.temporal_attention.forward(output_hx, output_cx, input_hidden_out)  # (batch_size, T)
             c_i = torch.sum(weights.unsqueeze(-1) * input_hidden_out, dim=1)  # (batch_size, input_hidden_size)
