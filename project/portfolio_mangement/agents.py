@@ -3,14 +3,14 @@ import torch
 import torch.nn as nn
 from pytorch_pretrained_bert import BertModel
 from torchlib.common import FloatTensor, LongTensor
+from torchlib.deep_rl.utils.distributions import FixedNormal
 from torchlib.utils.torch_layer_utils import conv2d_bn_relu_block, freeze
 
 
 class PriceOnlyPolicyModule(nn.Module):
     def __init__(self, nn_size, state_dim, action_dim, recurrent=False, hidden_size=20):
         super(PriceOnlyPolicyModule, self).__init__()
-        random_number = np.random.randn(action_dim, action_dim)
-        random_number = np.dot(random_number.T, random_number)
+        random_number = np.random.randn(action_dim)
 
         self.logstd = torch.nn.Parameter(torch.tensor(random_number, requires_grad=True).type(FloatTensor))
         self.model = nn.Sequential(
@@ -44,7 +44,7 @@ class PriceOnlyPolicyModule(nn.Module):
             hidden = hidden.squeeze(0)
         mean = self.action_head.forward(x)
         value = self.value_head.forward(x)
-        return (mean, self.logstd), hidden, value.squeeze(-1)
+        return FixedNormal(mean, self.logstd), hidden, value.squeeze(-1)
 
 
 class NewsPredictorModule(nn.Module):
@@ -108,8 +108,7 @@ class NewsOnlyPolicyModule(nn.Module):
         self.model = NewsPredictorModule(seq_length, freeze_embedding=freeze_embedding)
 
         action_dim = num_stocks + 1
-        random_number = np.random.randn(action_dim, action_dim)
-        random_number = np.dot(random_number.T, random_number)
+        random_number = np.random.randn(action_dim)
         self.logstd = torch.nn.Parameter(torch.tensor(random_number, requires_grad=True).type(FloatTensor))
 
         if recurrent:
@@ -136,4 +135,4 @@ class NewsOnlyPolicyModule(nn.Module):
             hidden = hidden.squeeze(0)
         mean = self.action_head.forward(x)
         value = self.value_head.forward(x)
-        return (mean, self.logstd), hidden, value.squeeze(-1)
+        return FixedNormal(mean, self.logstd), hidden, value.squeeze(-1)

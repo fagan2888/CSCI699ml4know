@@ -59,7 +59,6 @@ def build_agent(args, env):
         init_hidden_unit = None
 
     agent = ppo.Agent(policy_net, policy_optimizer,
-                      discrete=False,
                       init_hidden_unit=init_hidden_unit,
                       lam=gae_lambda,
                       clip_param=args.clip_param,
