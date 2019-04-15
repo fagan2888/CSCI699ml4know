@@ -42,6 +42,38 @@ def read_djia_sentiment(folder_path):
     """
     return [[]], []
 
+def get_djia_dual_attention_path(window_length, sentiment_analyzer, regression, train_val_test_split):
+    return "{}_{}_{}_{}.npz".format(window_length, sentiment_analyzer, regression, train_val_test_split)
+
+
+def create_djia_dual_attention_dataset(folder_path, window_length, sentiment_analyzer, regression=False,
+                                       train_val_test_split=(0.8, 0.1, 0.1), out_data_path=None):
+    """ Here the time series should be close ratio (close_ratio - 1.) * 100.
+
+    Args:
+        folder_path: path to stocknews folder containing three csv files.
+        window_length: window length
+        sentiment_analyzer: sentiment analyzer that can transform a sentence into a single polarity.
+        regression: if regression, output will be numbers. Otherwise, output will be labels.
+
+    Returns: train, val, test data loader, each containing:
+        (y: (num, window_length), news_sentiment: (num, 25, window_length), label: (num,))
+
+    """
+    if not out_data_path:
+        out_data_path = get_djia_dual_attention_path(window_length, sentiment_analyzer, regression,
+                                                     train_val_test_split)
+
+    def create_dataset(pd_frame):
+        pass
+
+
+    history = []
+    news_sentiment = []
+    label = []
+    djia_pd_frame = read_djia_observation(folder_path)
+
+
 
 if __name__ == '__main__':
     djia_pd_frame = read_djia_observation('../../data/stocknews')
