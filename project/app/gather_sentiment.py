@@ -50,7 +50,13 @@ class SentimentLibrary(object):
         # read the current output file and go to the line that without a sentiment.
 
     def getCurrentSentence(self):
-        return self.input_csv.iloc[self.current_index]['News']
+        if self.current_index < self.input_csv.shape[0]:
+            return self.input_csv.iloc[self.current_index]['News']
+        else:
+            return None
+
+    def getTotalSentence(self):
+        return self.current_index + 1, self.input_csv.shape[0]
 
     def submitResult(self, rating):
         # copy current index from source, add rating and append to output
@@ -66,8 +72,7 @@ class SentimentLibrary(object):
 
     def close(self):
         if self.input_csv is not None:
-            self.input_csv.close()
-            self.output_csv.to_csv(self.output_csv_path)
+            self.output_csv.to_csv(self.output_csv_path, index=False)
             print('Dump output to {}'.format(self.output_csv_path))
 
 
@@ -186,7 +191,34 @@ class SentimentRater(QMainWindow):
         QApplication.processEvents()
 
 
+def commandline():
+    inputFile = '/Users/chizhang/Developer/CSCI699ml4know/project/data/stocknews/RedditNews.csv'
+
+    sentimentLib = SentimentLibrary()
+    sentimentLib.setInputFile(inputFile)
+
+    while True:
+        sentence = sentimentLib.getCurrentSentence()
+        current, total = sentimentLib.getTotalSentence()
+        if sentence is None:
+            break
+        print('{}/{}: {}'.format(current, total, sentence))
+        rating = input('Please type your rating 1 - 5 [Negative to Positive]. 0 for exiting  ')
+        rating = int(rating)
+        if rating in [1, 2, 3, 4, 5]:
+            sentimentLib.submitResult(rating)
+        elif rating == 0:
+            sentimentLib.close()
+            break
+        else:
+            raise ValueError('Unknown number {}'.format(rating))
+
+
+
+
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = SentimentRater()
-    sys.exit(app.exec_())
+    commandline()
+
+    # app = QApplication(sys.argv)
+    # ex = SentimentRater()
+    # sys.exit(app.exec_())
