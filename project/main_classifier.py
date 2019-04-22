@@ -3,7 +3,7 @@ Train classifier to predict class labels
 """
 
 import pprint
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
 import numpy as np
 import torch.nn as nn
@@ -36,6 +36,7 @@ def create_dataset(pd_frame, max_seq_length, ratio_threshold=1.01):
     observation = np.stack(observation, axis=0)
     normalized_ratio = (ratio_threshold - 1.0) * 100
     labels = np.digitize(labels, bins=[-np.inf, -normalized_ratio, normalized_ratio, np.inf]) - 1
+    labels = labels.astype(np.int32)
     return observation, labels
 
 
@@ -67,6 +68,9 @@ if __name__ == '__main__':
     train_obs, train_labels = create_dataset(train_pd_frame, max_seq_length, ratio_threshold=ratio_threshold)
     test_obs, test_labels = create_dataset(test_pd_frame, max_seq_length, ratio_threshold=ratio_threshold)
     print('Finish')
+    print('Number of negative {}'.format(np.sum(train_labels == 0) / np.prod(train_labels.shape)))
+    print('Number of neutral {}'.format(np.sum(train_labels == 1) / np.prod(train_labels.shape)))
+    print('Number of positive {}'.format(np.sum(train_labels == 2) / np.prod(train_labels.shape)))
 
     model = NewsPredictorModule(seq_length=max_seq_length, freeze_embedding=args['freeze_embedding'])
 
