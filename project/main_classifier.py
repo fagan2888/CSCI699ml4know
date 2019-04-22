@@ -47,6 +47,7 @@ def make_parser():
     parser.add_argument('--max_seq_length', type=int, default=64)
     parser.add_argument('--epoch', type=int, default=20)
     parser.add_argument('--test', action='store_true')
+    parser.add_argument('--ratio_threshold', type=float, default=1.01)
 
     return parser
 
@@ -60,10 +61,11 @@ if __name__ == '__main__':
     train_pd_frame, test_pd_frame = np.split(pd_frame, [int(0.8 * len(pd_frame))])
 
     max_seq_length = args['max_seq_length']
+    ratio_threshold = args['ratio_threshold']
 
     print('Collecting dataset')
-    train_obs, train_labels = create_dataset(train_pd_frame, max_seq_length)
-    test_obs, test_labels = create_dataset(test_pd_frame, max_seq_length)
+    train_obs, train_labels = create_dataset(train_pd_frame, max_seq_length, ratio_threshold=ratio_threshold)
+    test_obs, test_labels = create_dataset(test_pd_frame, max_seq_length, ratio_threshold=ratio_threshold)
     print('Finish')
 
     model = NewsPredictorModule(seq_length=max_seq_length, freeze_embedding=args['freeze_embedding'])
