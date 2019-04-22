@@ -75,8 +75,7 @@ class NewsPredictorModule(nn.Module):
         linear_size = 4 * seq_length // 16
 
         self.linear = nn.Sequential(
-            nn.Linear(linear_size, 1),
-            nn.Sigmoid()
+            nn.Linear(linear_size, 3),
         )
 
     def forward(self, state):
@@ -98,7 +97,8 @@ class NewsPredictorModule(nn.Module):
         cnn_out = torch.mean(cnn_out, dim=2)  # (batch, 16, num_stock, 8)
         x = cnn_out.view(cnn_out.size(0), -1)
         prob = self.linear.forward(x)
-        prob = prob.view(batch_size, num_stocks)
+        prob = prob.view(batch_size, num_stocks, 3)
+        prob = prob.permute(0, 2, 1)
         return prob
 
 

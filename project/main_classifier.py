@@ -9,14 +9,14 @@ import numpy as np
 import torch.nn as nn
 import torch.optim
 from torchlib.dataset.utils import create_data_loader
-from torchlib.trainer import BinaryClassifier
+from torchlib.trainer import Classifier
 
 from portfolio_mangement.agents import NewsPredictorModule
 from portfolio_mangement.envs import PortfolioEnv, PortfolioEnvObsReshapeWrapper
 from portfolio_mangement.utils.data import read_djia_observation
 
 
-def create_dataset(pd_frame, max_seq_length):
+def create_dataset(pd_frame, max_seq_length, ratio_threshold=1.01):
     pd_frame_dict = OrderedDict()
     pd_frame_dict['DJIA'] = pd_frame
     env = PortfolioEnv(pd_frame_dict, total_steps=-1)
@@ -34,7 +34,8 @@ def create_dataset(pd_frame, max_seq_length):
     observation = observation[:-1]
     labels = labels[1:]
     observation = np.stack(observation, axis=0)
-    labels = (np.stack(labels, axis=0) > 0).astype(np.float)
+    normalized_ratio = (ratio_threshold - 1.0) * 100
+    labels = np.digitize(labels, bins=[-np.inf, -normalized_ratio, normalized_ratio, np.inf]) - 1
     return observation, labels
 
 
@@ -69,7 +70,7 @@ if __name__ == '__main__':
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args['learning_rate'])
 
-    classifier = BinaryClassifier(model, optimizer, nn.BCELoss())
+    classifier = Classifier(model, optimizer, nn.CrossEntropyLoss())
 
     train_loader = create_data_loader((train_obs, train_labels), batch_size=32, shuffle=True, drop_last=False)
     val_loader = create_data_loader((test_obs, test_labels), batch_size=32, shuffle=False, drop_last=False)
