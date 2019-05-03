@@ -4,7 +4,7 @@ import torch.nn as nn
 from pytorch_pretrained_bert import BertModel
 from torchlib.common import FloatTensor, LongTensor
 from torchlib.deep_rl.utils.distributions import FixedNormal
-from torchlib.utils.torch_layer_utils import conv2d_bn_relu_block, freeze
+from torchlib.utils.layers import conv2d_bn_relu_block, freeze
 
 
 class PriceOnlyPolicyModule(nn.Module):
