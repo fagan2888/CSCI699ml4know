@@ -44,7 +44,7 @@ class PriceOnlyPolicyModule(nn.Module):
             hidden = hidden.squeeze(0)
         mean = self.action_head.forward(x)
         value = self.value_head.forward(x)
-        return FixedNormal(mean, self.logstd), hidden, value.squeeze(-1)
+        return FixedNormal(mean, torch.exp(self.logstd)), hidden, value.squeeze(-1)
 
 
 class NewsPredictorModule(nn.Module):
@@ -141,7 +141,7 @@ class NewsOnlyPolicyModule(nn.Module):
             hidden = hidden.squeeze(0)
         mean = self.action_head.forward(x)
         value = self.value_head.forward(x)
-        return FixedNormal(mean, self.logstd), hidden, value.squeeze(-1)
+        return FixedNormal(mean, torch.exp(self.logstd)), hidden, value.squeeze(-1)
 
 
 from torchlib.deep_rl import BaseAgent
@@ -154,12 +154,16 @@ class TrustRegionAgent(BaseAgent):
         self.threshold = threshold
 
     def predict(self, state):
+        # state shape (num_stocks, num_news, news_length)
+        state = state[:, :, :64]
+        state = state.reshape((state.shape[0], -1))
         assert state.shape == (1, 1600)
         state = np.expand_dims(state, axis=0)
         with torch.no_grad():
+            state = torch.from_numpy(state)
             out = self.predictor.forward(state).cpu().numpy()
         out = np.squeeze(out, axis=0)  # (nun_stocks, 2)
-        probability_up = out[:, 0]
+        probability_up = out[0, :]
         probability_up[probability_up < self.threshold] = 0
         probability_up = np.insert(probability_up, 0, 0.5)  # insert cash probability
         action = probability_up / np.sum(probability_up)

@@ -173,7 +173,7 @@ In multi-sized window approach, we concatenate all the news into a single senten
 In time series approach, we explore the temporal dependency by modeling the problem as non-linear auto-regressive exogenous time series prediction. We assume a pretrained sentiment scorer on universal corpus that transforms each sentence into a scalar score ranging from $[-1, 1]$ that indicates the polarity of the sentence. Then, the historical price is the original time series and sentiment scores is driving time series that affect the trend original time series. We apply a dual-stage attention mechanism that both select which driving series to pay attention to and which time step in the history to pay attention to.
 
 \subsubsection{Multi-sized Window CNN}
-Convolutional Neural Networks are extremely useful and efficient for sentence modeling \cite{kim_cnn_sentiment}. First, we use pretrained GloVe \cite{glove} to initialize our embedding layer. Then, we apply multi-filter width convolution layer to extract various $n$-gram features. After that, we use max-pooling to select the most important features. Finally, we use a fully-connected layer with softmax to output the probability of the stock trend. We apply additional dropout in the embedding layer and fully-connected layers to prevent overfitting.
+Convolutional Neural Networks are extremely useful and efficient for sentence modeling \cite{kim_cnn_sentiment}. First, we use pretrained Bert \cite{bert} to initialize our embedding layer. Then, we apply multi-filter width convolution layer to extract various $n$-gram features. After that, we use max-pooling to select the most important features. Finally, we use a fully-connected layer with softmax to output the probability of the stock trend. We apply additional dropout in the embedding layer and fully-connected layers to prevent overfitting.
 
 \begin{figure}
   \centering
@@ -244,23 +244,19 @@ For classification task, if the prediction is larger than previous time step val
 \subsection{Trading Strategy}
 Trading strategy is the function mapping from stock prediction to final action. Given ground truth stock labels, the \textbf{optimal} action is to invest everything to the stock with highest return. In fact, \textbf{training imitation learning agent mapping directly from news to optimal action is equivalent to only predicting the probability of stock goes up/down.} The action can be computed by only investing to the stock with highest probability that price will go up. However, investing all the money into one stock is very risk. In this section, we propose several na\"ive strategy and a strategy using reinforcement learning.
 \subsubsection{Na\"ive Strategy}
-We propose two na\"ive strategies here
-\begin{enumerate}
-  \item Trust-region investment: assume the probability of $N$ stocks (including cash) going up is $p_1, p_2, \cdots, p_N$, then if $p_i < threshold$, set $p'_i=0$. Otherwise, $p'_i=p_i$. Then, $a_i=\frac{p'_i}{\sum_{j=1}^{N}p'_j}$. The idea is that we only invest when the system is very certain about the trend. Note that we set the probability of cash going up to be 0.5. Thus, if all the stock goes down, we will not invest in any stocks. In our experiments, we set threshold to be 0.7, 0.8, 0.9.
-  \item Running statistics: We maintain a running average and running standard deviation as the stock goes. If the predicted price is $k$-standard deviation higher than previous day, then we invest in this stock. If there are $M$ such stocks, we equally distribute our money into them.
-\end{enumerate}
+We propose an na\"ive strategies using trust-region investment: assume the probability of $N$ stocks (including cash) going up is $p_1, p_2, \cdots, p_N$, then if $p_i < threshold$, set $p'_i=0$. Otherwise, $p'_i=p_i$. Then, $a_i=\frac{p'_i}{\sum_{j=1}^{N}p'_j}$. The idea is that we only invest when the system is very certain about the trend. Note that we set the probability of cash going up to be 0.5. Thus, if all the stock goes down, we will not invest in any stocks. In our experiments, we set threshold to be 0.7, 0.8, 0.9.
 \subsubsection{RL-based Strategy}
 Instead of developing custom strategy, we apply reinforcement learning to learn policy directly using policy gradient on historical data. Vanilla policy gradient suffers from low sample efficiency. In this work, we apply proximal policy optimization that optimize the following surrogate loss
 \begin{equation}
 L^{CLIP}(\theta)=\hat{\mathbb{E}}_t[\min(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon))]
 \end{equation}
 where $r_t=\frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}$ is the probability ratio between new policy and old policy and $\hat{A}_t$ is the estimated advantage function. We show the algorithm in Figure~\ref{fig:ppo}.
-\begin{figure*}
+\begin{figure}
   \centering
   \includegraphics[width=\linewidth]{ppo}
   \caption{Proximal Policy Optimization}
   \label{fig:ppo}
-\end{figure*}
+\end{figure}
 
 
 \section{Experimental Setup}
@@ -289,44 +285,93 @@ To evaluate the trading performance, we calculate the return defined in Eq~\ref{
 \section{Results}
 
 \subsection{Stock Trend Prediction}
-\begin{table*}
-  \centering
-  \caption{Stock Trend Prediction Result}
-  \begin{tabular}{|c|c|c|}
-    \hline
-    Method & Multi-sized Window CNN & Dual-Stage Attention RNN \\\hline
-    F1-score &   &  \\\hline
-  \end{tabular}
-  \label{table:stock_trend_prediction}
-\end{table*}
+%\begin{table*}
+%  \centering
+%  \caption{Stock Trend Prediction Result}
+%  \begin{tabular}{|c|c|c|}
+%    \hline
+%    Method & Multi-sized Window CNN & Dual-Stage Attention RNN \\\hline
+%    F1-score &  0.6021  &  \\\hline
+%  \end{tabular}
+%  \label{table:stock_trend_prediction}
+%\end{table*}
 
 \subsubsection{Multi-sized CNN}
-Discuss how to choose hyperparameter
+The window size we choose is $3, 4, 5, 6, 7, 8$. We show a training/val loss in Figure~\ref{fig:multi_size_cnn_loss} and accuracy/recall/f1 in Figure~\ref{fig:multi_size_cnn_stats}. We observed that the validation loss diverges at the beginning of the training, indicating the model actually doesn't even learn anything from training data that can be generalized to validation data. The model starts to overfit the training data at the beginning of the training procedure.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{multi_size_cnn_loss}
+  \caption{Multi-size CNN Loss}
+  \label{fig:multi_size_cnn_loss}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{multi_size_cnn_stats}
+  \caption{Multi-size CNN Statistics}
+  \label{fig:multi_size_cnn_stats}
+\end{figure}
+
 
 \subsubsection{Dual-Stage Attention RNN}
-Discuss how to choose hyperparameter. Plot a figure show the regression result.
+We use NLTK \cite{nltk} open source SentimentIntensityAnalyzer to extract the sentiment polarity of a sentence. We show the loss of window length 3 and 5 in Figure~\ref{fig:dual_attention_window_3} and Figure~\ref{fig:dual_attention_window_5}, respectively. The same problem persists here that the validation loss diverges at the beginning of the training procedure.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{dual_attention_window_3}
+  \caption{Dual-Stage Attention Loss Window 3}
+  \label{fig:dual_attention_window_3}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{dual_attention_window_5}
+  \caption{Dual-Stage Attention Loss Window 5}
+  \label{fig:dual_attention_window_5}
+\end{figure}
+
 
 \subsection{Trading Performance}
-We run various policy including trust-region investment, running statistics and RL-based strategy on test data and show the trading performance in Table~\ref{table:trading_performance}.
+We run various policy including trust-region investment, running statistics and RL-based strategy on test data and show the trading performance in Table~\ref{table:trading_performance}. We show portfolio value versus market value of PPO-based approach and trust-region based approach (0.7) in Figure~\ref{fig:ppo_trading} and Figure~\ref{fig:trust_region_trading}. We show that in RL-based approach, we can achieve slightly higher return than market value while in trust-region based approach, we always hold the money without investing in any stock. This is due to the fact that the performance of predictor is really bad and it always produces probability around 0.5.
+
 \begin{table*}
   \centering
-  \caption{Trading Performance Result}
-  \begin{tabular}{|c|c|c|c|c|c|}
+  \caption{Average Trading Performance on 100 runs}
+  \begin{tabular}{|c|c|c|c|c|}
     \hline
-    Method & Trust-region (0.7) & Trust-region (0.8) & Trust-region (0.9) & Running statistics ($k=3$) & PPO \\\hline
-    Return &   &  & & & \\\hline
+    Method & Trust-region (0.7) & Trust-region (0.8) & Trust-region (0.9) & PPO \\\hline
+    Return & 1.0  & 1.0 & 1.0 &  1.006 \\\hline
   \end{tabular}
   \label{table:trading_performance}
 \end{table*}
-Show the reward figure of various methods w.r.t the market value.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{ppo_trading}
+  \caption{Trading Performance of PPO}
+  \label{fig:ppo_trading}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{trust_region_trading}
+  \caption{Trading Performance of Trust Region Policy (0.7)}
+  \label{fig:trust_region_trading}
+\end{figure}
+
 
 \section{Discussions}
-We make several comments here for our future exploration.
-\begin{enumerate}
-  \item There is a fundamental issue of the current sentence labeling approach. We use the stock price to indicate the label. However, this may not be correct. We probably need a general sentiment classification system on large news and financial corpus and average the score of all news for particular stock.
-  \item Predicting the daily stock trend using historical price and news is almost impossible due to the huge fluctuation of the stock market. Maybe, we want to predict longer period trend (say a week) and fix the investment ratio within longer period.
-\end{enumerate}
-
+In this report, we explore several natural language models that extract the sentence sentiment features to predict the stock trend and make appropriate actions. However, none of those approaches finally works. We doubt the validity of these dataset. We try to manually label the sentiment. We label the sentence as 1 if there is a positive relationship between the sentence and the stock, 0 if there is no relationship and -1 if there is negative relationship. We found that most the sentences, even to human, is extremely vague how they would affect the stock trend.
+\begin{itemize}
+  \item UK Hospitals Are Feeding 1.6 Million Patients Health Records to Googles AI: Positive
+  \item Final warning to Facebook by Frances data watchdog: Negative
+  \item Iran wants India to pay oil dues in euros: Unknown
+  \item IMF chief backs Athens as permanent Olympic host: Unknown
+  \item Chinese oil pipeline explodes: Negative
+  \item India gets \$1 billion loan from World Bank for solar mission: Unknown
+\end{itemize}
+We realized that in this problem, the method is actually secondary. The data source matters a lot. We will try to build an efficient tweets/news scrapper that extract most relevant features in future work.
 
 \bibliography{bib/acl2019}
 \bibliographystyle{acl_natbib}

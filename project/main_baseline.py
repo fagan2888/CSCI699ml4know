@@ -113,3 +113,4 @@ if __name__ == '__main__':
 
         print('Test on Original Env')
         deep_rl.test(env, agent, args.n_iter, seed=args.seed)
+        env.render()

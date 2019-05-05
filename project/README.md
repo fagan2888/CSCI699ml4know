@@ -13,10 +13,24 @@
 Dow Johns Index Average from 2008 to 2016.
 
 ## Dependencies
-[My own Pytorch library torchlib](https://github.com/vermouth1992/torchlib)
+[My own Pytorch library torchlib](https://github.com/vermouth1992/torchlib/tree/440257d003c3981a6c25eb4377a7eb295416f61b)
+Please clone the project and put in the same folder in project
+Other requirements in requirements.txt
+pip install -r requirements.txt
 
-## Midterm
-- Train a CNN sentiment sentence classifier, fix sentiment score module and train RL. The label is the stock price up/down.
-- Train a CNN sentiment sentence classification with RL end-to-end.
-- Train only with numerical observations.
-- The RL algorithm is Proximal Policy Optimization with Recurrent Unit
+## Train Multi-sized CNN
+python main_classifier.py
+The training log is in multi_size_cnn.log. This requires GPU as it uses Bert Embedding.
+
+## Train Dual-attention 
+python main_dual_attention.py --regression --window_size 3
+Change the window size to 1, 3, 5, 7.
+
+## Train PPO model
+python main_baseline.py
+
+## Test PPO model
+python main_baseline.py --test
+
+## Test Trust-region model
+In playground.ipynb. It is a little bit messy. But you can run in sequence.
