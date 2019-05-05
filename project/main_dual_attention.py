@@ -32,7 +32,7 @@ if __name__ == '__main__':
     import torch.nn as nn
     import torch.optim
     from torchlib.trainer import Trainer
-    from torchlib.dataset.utils import create_data_loader
+    from torchlib.dataset.utils import create_tuple_data_loader
 
     from portfolio_mangement.models import DualAttentionRNN
     from portfolio_mangement.utils.data import load_djia_dual_attention_dataset
@@ -77,12 +77,12 @@ if __name__ == '__main__':
     batch_size = args['batch_size']
     epoch = args['epoch']
 
-    train_loader = create_data_loader(out[0], batch_size=batch_size)
-    val_loader = create_data_loader(out[1], batch_size=batch_size)
-    test_loader = create_data_loader(out[2], batch_size=batch_size)
+    train_loader = create_tuple_data_loader(((train_history, train_news), (train_label)), batch_size=batch_size)
+    val_loader = create_tuple_data_loader(((val_history, val_news), (val_label)), batch_size=batch_size)
+    test_loader = create_tuple_data_loader(((test_history, test_news), (test_label)), batch_size=batch_size)
 
     checkpoint_path = get_checkpoint_path(input_hidden_size, temporal_hidden_size, window_size,
                                           regression, sentiment_analyzer)
 
-    trainer.fit(train_data_loader=train_loader, num_inputs=2, epochs=epoch, val_data_loader=val_loader,
+    trainer.fit(train_data_loader=train_loader, epochs=epoch, val_data_loader=val_loader,
                 checkpoint_path=checkpoint_path)
