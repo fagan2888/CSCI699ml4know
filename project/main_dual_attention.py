@@ -77,9 +77,9 @@ if __name__ == '__main__':
     batch_size = args['batch_size']
     epoch = args['epoch']
 
-    train_loader = create_tuple_data_loader(((train_history, train_news), (train_label)), batch_size=batch_size)
-    val_loader = create_tuple_data_loader(((val_history, val_news), (val_label)), batch_size=batch_size)
-    test_loader = create_tuple_data_loader(((test_history, test_news), (test_label)), batch_size=batch_size)
+    train_loader = create_tuple_data_loader(((train_history, train_news), (train_label,)), batch_size=batch_size)
+    val_loader = create_tuple_data_loader(((val_history, val_news), (val_label,)), batch_size=batch_size)
+    test_loader = create_tuple_data_loader(((test_history, test_news), (test_label,)), batch_size=batch_size)
 
     checkpoint_path = get_checkpoint_path(input_hidden_size, temporal_hidden_size, window_size,
                                           regression, sentiment_analyzer)

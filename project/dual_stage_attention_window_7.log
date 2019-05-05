@@ -1,0 +1,111 @@
+Enable cuda True
+{'batch_size': 64,
+ 'epoch': 100,
+ 'input_hidden_size': 32,
+ 'learning_rate': 0.01,
+ 'regression': True,
+ 'temporal_hidden_size': 32,
+ 'window_size': 7}
+Saving checkpoint to checkpoint/32_32_7_True_nltk
+Train loss: 1.7692 - Val loss: 0.9672
+Train loss: 1.7656 - Val loss: 0.9825
+Train loss: 1.7522 - Val loss: 0.9924
+Train loss: 1.7487 - Val loss: 1.0042
+Train loss: 1.7441 - Val loss: 0.9888
+Train loss: 1.7204 - Val loss: 1.0213
+Train loss: 1.7071 - Val loss: 1.0533
+Train loss: 1.6690 - Val loss: 0.9938
+Train loss: 1.6901 - Val loss: 1.0370
+Train loss: 1.6265 - Val loss: 1.0089
+Train loss: 1.6347 - Val loss: 0.9772
+Train loss: 1.5968 - Val loss: 1.0233
+Train loss: 1.5320 - Val loss: 0.9929
+Train loss: 1.5060 - Val loss: 1.0076
+Train loss: 1.4390 - Val loss: 1.0376
+Train loss: 1.3947 - Val loss: 1.1053
+Train loss: 1.4326 - Val loss: 1.0462
+Train loss: 1.3593 - Val loss: 1.0372
+Train loss: 1.3606 - Val loss: 1.0685
+Train loss: 1.2997 - Val loss: 1.0376
+Train loss: 1.3029 - Val loss: 1.0755
+Train loss: 1.2443 - Val loss: 1.0644
+Saving checkpoint to checkpoint/32_32_7_True_nltk
+Train loss: 1.4734 - Val loss: 0.9641
+Train loss: 1.4188 - Val loss: 1.0289
+Train loss: 1.2828 - Val loss: 1.0106
+Train loss: 1.2230 - Val loss: 0.9988
+Train loss: 1.1374 - Val loss: 1.0260
+Train loss: 1.0661 - Val loss: 1.0289
+Train loss: 1.0062 - Val loss: 1.0924
+Train loss: 1.0342 - Val loss: 1.0618
+Train loss: 0.9725 - Val loss: 1.0698
+Train loss: 0.9540 - Val loss: 1.0550
+Train loss: 1.1016 - Val loss: 1.0058
+Saving checkpoint to checkpoint/32_32_7_True_nltk
+Train loss: 0.9822 - Val loss: 0.9357
+Train loss: 0.8906 - Val loss: 1.0487
+Train loss: 0.8720 - Val loss: 1.1379
+Train loss: 0.8647 - Val loss: 1.1140
+Train loss: 0.8375 - Val loss: 1.0855
+Train loss: 0.7876 - Val loss: 1.1806
+Train loss: 0.7679 - Val loss: 1.1382
+Train loss: 0.7216 - Val loss: 1.1408
+Train loss: 0.7074 - Val loss: 1.1199
+Train loss: 0.7128 - Val loss: 1.1391
+Train loss: 0.6824 - Val loss: 1.1577
+Train loss: 0.6554 - Val loss: 1.2003
+Train loss: 0.6509 - Val loss: 1.1454
+Train loss: 0.6399 - Val loss: 1.1420
+Train loss: 0.6140 - Val loss: 1.1980
+Train loss: 0.6083 - Val loss: 1.2959
+Train loss: 0.6067 - Val loss: 1.1590
+Train loss: 0.5910 - Val loss: 1.1720
+Train loss: 0.5756 - Val loss: 1.2032
+Train loss: 0.5811 - Val loss: 1.2447
+Train loss: 0.5942 - Val loss: 1.0878
+Train loss: 0.6598 - Val loss: 1.1025
+Train loss: 0.7088 - Val loss: 1.1305
+Train loss: 0.6462 - Val loss: 1.3484
+Train loss: 0.5842 - Val loss: 1.1956
+Train loss: 0.5411 - Val loss: 1.1669
+Train loss: 0.5144 - Val loss: 1.1910
+Train loss: 0.4887 - Val loss: 1.1854
+Train loss: 0.4812 - Val loss: 1.0643
+Train loss: 0.4756 - Val loss: 1.1878
+Train loss: 0.4410 - Val loss: 1.1640
+Train loss: 0.4431 - Val loss: 1.1898
+Train loss: 0.4221 - Val loss: 1.2318
+Train loss: 0.4188 - Val loss: 1.1553
+Train loss: 0.4174 - Val loss: 1.1694
+Train loss: 0.4015 - Val loss: 1.2900
+Train loss: 0.4518 - Val loss: 1.2654
+Train loss: 0.5813 - Val loss: 1.1949
+Train loss: 0.5237 - Val loss: 1.1610
+Train loss: 0.4730 - Val loss: 1.1724
+Train loss: 0.4259 - Val loss: 1.1344
+Train loss: 0.4616 - Val loss: 1.1383
+Train loss: 0.4454 - Val loss: 1.1040
+Train loss: 0.4616 - Val loss: 1.1834
+Train loss: 0.4682 - Val loss: 1.2448
+Train loss: 0.4224 - Val loss: 1.1881
+Train loss: 0.3893 - Val loss: 1.3338
+Train loss: 0.3553 - Val loss: 1.2952
+Train loss: 0.3445 - Val loss: 1.3112
+Train loss: 0.3251 - Val loss: 1.3422
+Train loss: 0.3430 - Val loss: 1.3324
+Train loss: 0.3190 - Val loss: 1.3051
+Train loss: 0.3068 - Val loss: 1.3445
+Train loss: 0.2990 - Val loss: 1.2920
+Train loss: 0.2871 - Val loss: 1.3038
+Train loss: 0.2790 - Val loss: 1.2663
+Train loss: 0.2740 - Val loss: 1.4416
+Train loss: 0.2733 - Val loss: 1.4400
+Train loss: 0.2711 - Val loss: 1.3071
+Train loss: 0.2643 - Val loss: 1.4006
+Train loss: 0.2674 - Val loss: 1.4442
+Train loss: 0.2820 - Val loss: 1.2689
+Train loss: 0.4157 - Val loss: 1.3037
+Train loss: 0.4160 - Val loss: 1.2073
+Train loss: 0.4232 - Val loss: 1.5107
+Train loss: 0.4594 - Val loss: 1.1716
+Train loss: 0.4374 - Val loss: 1.4637

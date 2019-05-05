@@ -67,6 +67,7 @@ class DualAttentionRNN(nn.Module):
         self.window_size = window_size
         self.input_hidden_size = input_hidden_size
         self.temporal_hidden_size = temporal_hidden_size
+        self.regression = regression
 
     def forward(self, history, driving_series):
         """ T is the window size. At time step t, we observe history price from day t - T + 1, ... t.
@@ -101,5 +102,8 @@ class DualAttentionRNN(nn.Module):
             output_hx, output_cx = self.decoder_lstm.forward(y_i_hat, (output_hx, output_cx))
 
         prediction = self.output_linear.forward(output_hx)
+
+        if self.regression:
+            prediction = torch.squeeze(prediction, dim=-1)
 
         return prediction
