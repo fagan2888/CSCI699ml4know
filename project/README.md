@@ -14,7 +14,8 @@ Dow Johns Index Average from 2008 to 2016.
 
 ## Dependencies
 [My own Pytorch library torchlib](https://github.com/vermouth1992/torchlib/tree/440257d003c3981a6c25eb4377a7eb295416f61b)
-Please clone the project and put in the same folder in project
+
+Please clone the project (use this particular commit since the lib will be updated frequently) and put in the same folder in project
 Other requirements in requirements.txt
 pip install -r requirements.txt
 
