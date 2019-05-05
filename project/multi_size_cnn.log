@@ -1,0 +1,36 @@
+Enable cuda True
+Better speed can be achieved with apex installed from https://www.github.com/nvidia/apex.
+{'epoch': 20,
+ 'freeze_embedding': False,
+ 'learning_rate': 0.0001,
+ 'max_seq_length': 64,
+ 'ratio_threshold': 1.01,
+ 'test': False}
+Collecting dataset
+Finish
+Number of negative 0.45780856423173805
+Number of neutral 0.542191435768262
+Number of positive 0.0
+Saving checkpoint to checkpoint/baseline_predictor.ckpt
+Train loss: 0.6942 - Train acc: 0.5220 - Val loss: 0.7005 - Val acc: 0.5089 - Val rec: 0.9900 - Val f1: 0.6712
+Saving checkpoint to checkpoint/baseline_predictor.ckpt
+Train loss: 0.6480 - Train acc: 0.6889 - Val loss: 0.6946 - Val acc: 0.5114 - Val rec: 0.7300 - Val f1: 0.6021
+Saving checkpoint to checkpoint/baseline_predictor.ckpt
+Train loss: 0.6004 - Train acc: 0.7714 - Val loss: 0.6946 - Val acc: 0.5089 - Val rec: 0.5850 - Val f1: 0.5467
+Train loss: 0.5368 - Train acc: 0.9547 - Val loss: 0.6981 - Val acc: 0.5266 - Val rec: 0.8650 - Val f1: 0.6492
+Train loss: 0.4607 - Train acc: 0.9874 - Val loss: 0.6992 - Val acc: 0.5139 - Val rec: 0.7700 - Val f1: 0.6160
+Train loss: 0.3759 - Train acc: 1.0000 - Val loss: 0.7017 - Val acc: 0.5013 - Val rec: 0.7000 - Val f1: 0.5870
+Train loss: 0.2904 - Train acc: 1.0000 - Val loss: 0.7142 - Val acc: 0.5215 - Val rec: 0.8650 - Val f1: 0.6467
+Train loss: 0.2114 - Train acc: 1.0000 - Val loss: 0.7184 - Val acc: 0.5089 - Val rec: 0.7800 - Val f1: 0.6166
+Train loss: 0.1479 - Train acc: 1.0000 - Val loss: 0.7162 - Val acc: 0.4785 - Val rec: 0.5850 - Val f1: 0.5318
+Train loss: 0.1042 - Train acc: 1.0000 - Val loss: 0.7251 - Val acc: 0.4835 - Val rec: 0.6500 - Val f1: 0.5603
+Train loss: 0.0733 - Train acc: 1.0000 - Val loss: 0.7430 - Val acc: 0.5063 - Val rec: 0.7650 - Val f1: 0.6108
+Train loss: 0.0528 - Train acc: 1.0000 - Val loss: 0.7368 - Val acc: 0.4835 - Val rec: 0.6400 - Val f1: 0.5565
+Train loss: 0.0388 - Train acc: 1.0000 - Val loss: 0.7492 - Val acc: 0.4987 - Val rec: 0.7050 - Val f1: 0.5875
+Train loss: 0.0300 - Train acc: 1.0000 - Val loss: 0.7568 - Val acc: 0.5038 - Val rec: 0.7100 - Val f1: 0.5917
+Train loss: 0.0236 - Train acc: 1.0000 - Val loss: 0.7597 - Val acc: 0.4937 - Val rec: 0.6900 - Val f1: 0.5798
+Train loss: 0.0190 - Train acc: 1.0000 - Val loss: 0.7606 - Val acc: 0.4861 - Val rec: 0.6550 - Val f1: 0.5634
+Train loss: 0.0154 - Train acc: 1.0000 - Val loss: 0.7716 - Val acc: 0.4937 - Val rec: 0.6900 - Val f1: 0.5798
+Train loss: 0.0129 - Train acc: 1.0000 - Val loss: 0.7701 - Val acc: 0.4861 - Val rec: 0.6550 - Val f1: 0.5634
+Train loss: 0.0108 - Train acc: 1.0000 - Val loss: 0.7734 - Val acc: 0.4861 - Val rec: 0.6450 - Val f1: 0.5597
+Train loss: 0.0092 - Train acc: 1.0000 - Val loss: 0.7840 - Val acc: 0.4911 - Val rec: 0.6850 - Val f1: 0.5768
