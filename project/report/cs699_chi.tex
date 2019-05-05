@@ -201,7 +201,7 @@ The architecture is borrowed from \cite{dual_attention}. In this model, assume w
 \end{figure}
 
 \paragraph{Input Attention Mechanism}
-We show the input attention mechanism in Figure~\ref{fig:input_attention}. The RNN model we use is LSTM. We assume $h_{t-1}$ and $s_{t-1}$ is the hidden state from previous time step, then we compute the attention weights $e_{t}^{k}$ as 
+We show the input attention mechanism in Figure~\ref{fig:input_attention}. The RNN model we use is LSTM \cite{lstm}. We assume $h_{t-1}$ and $s_{t-1}$ is the hidden state from previous time step, then we compute the attention weights $e_{t}^{k}$ as 
 \begin{equation}
 e_{t}^{k}=v_{e}^T\tanh (W_e[h_{t-1}; s_{t-1}]+U_ex^k)
 \end{equation}
@@ -307,7 +307,18 @@ Discuss how to choose hyperparameter
 Discuss how to choose hyperparameter. Plot a figure show the regression result.
 
 \subsection{Trading Performance}
-
+We run various policy including trust-region investment, running statistics and RL-based strategy on test data and show the trading performance in Table~\ref{table:trading_performance}.
+\begin{table*}
+  \centering
+  \caption{Trading Performance Result}
+  \begin{tabular}{|c|c|c|c|c|c|}
+    \hline
+    Method & Trust-region (0.7) & Trust-region (0.8) & Trust-region (0.9) & Running statistics ($k=3$) & PPO \\\hline
+    Return &   &  & & & \\\hline
+  \end{tabular}
+  \label{table:trading_performance}
+\end{table*}
+Show the reward figure of various methods w.r.t the market value.
 
 \section{Discussions}
 We make several comments here for our future exploration.

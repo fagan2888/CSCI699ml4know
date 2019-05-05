@@ -4,7 +4,7 @@ import torch.nn as nn
 from pytorch_pretrained_bert import BertModel
 from torchlib.common import FloatTensor, LongTensor
 from torchlib.deep_rl.utils.distributions import FixedNormal
-from torchlib.utils.layers import conv2d_bn_relu_block, freeze
+from torchlib.utils.layers import freeze
 
 
 class PriceOnlyPolicyModule(nn.Module):
@@ -52,7 +52,7 @@ class NewsPredictorModule(nn.Module):
     A predictor for news data. The input is indices of 25
     """
 
-    def __init__(self, seq_length, freeze_embedding=False):
+    def __init__(self, seq_length, freeze_embedding=False, window_length_lst=(3, 4, 5, 6, 7, 8)):
         """
 
         Args:
@@ -65,39 +65,45 @@ class NewsPredictorModule(nn.Module):
         self.embedding = BertModel.from_pretrained('bert-base-uncased').embeddings
         if freeze_embedding:
             freeze(self.embedding)
-        self.model = nn.Sequential(
-            *conv2d_bn_relu_block(in_channels=768, out_channels=8, kernel_size=(1, 8), stride=(1, 4),
-                                  padding=(0, 2), normalize=True),
-            *conv2d_bn_relu_block(in_channels=8, out_channels=4, kernel_size=(1, 8), stride=(1, 4),
-                                  padding=(0, 2), normalize=True),
-        )
-
-        linear_size = 4 * seq_length // 16
+        self.model = nn.ModuleList()
+        out_channels = 2
+        for window_length in window_length_lst:
+            self.model.append(nn.Conv1d(in_channels=768, out_channels=out_channels, kernel_size=window_length,
+                                        stride=1, padding=(window_length // 2)))
+        self.max_pool = nn.MaxPool1d(kernel_size=64, stride=64)
+        self.relu = nn.ReLU()
+        linear_size = out_channels * len(window_length_lst) * seq_length // 64
 
         self.linear = nn.Sequential(
-            nn.Linear(linear_size, 3),
+            nn.Linear(linear_size, 2),
         )
 
     def forward(self, state):
         """
 
         Args:
-            state: shape is (batch_size, num_stocks, num_news, seq_length) with idx of words.
+            state: shape is (batch_size, num_stocks, seq_length) with idx of words.
 
         Returns: the probability of stock goes up (batch_size, num_stocks)
 
         """
         state = state.type(LongTensor)
-        batch_size, num_stocks, num_news, seq_length = state.shape
-        state = state.view(batch_size * num_stocks * num_news, seq_length)
+        batch_size, num_stocks, seq_length = state.shape
         embedding = self.embedding.forward(state)
-        embedding = embedding.view(batch_size * num_stocks, num_news, seq_length, 768).permute(0, 3, 1, 2)
-        cnn_out = self.model.forward(embedding)  # (batch*num_stock, num_news, 8, 16)
+        embedding = embedding.view(batch_size * num_stocks, seq_length, 768).permute(0, 2, 1)
+
+        cnn_out = []
+        for model in self.model:
+            out = model.forward(embedding)
+            out = self.relu.forward(out)
+            out = self.max_pool.forward(out)
+            out = out.view(batch_size, -1)
+            cnn_out.append(out)  # (batch_size * num_stocks, seq_length // 64, 2) = (batch_size, 25, 2)
+
         # average with all the news
-        cnn_out = torch.mean(cnn_out, dim=2)  # (batch, 16, num_stock, 8)
-        x = cnn_out.view(cnn_out.size(0), -1)
-        prob = self.linear.forward(x)
-        prob = prob.view(batch_size, num_stocks, 3)
+        cnn_out = torch.cat(cnn_out, dim=-1)  # (batch_size * num_stocks, 50 * len(window))
+        prob = self.linear.forward(cnn_out)
+        prob = prob.view(batch_size, num_stocks, 2)
         prob = prob.permute(0, 2, 1)
         return prob
 

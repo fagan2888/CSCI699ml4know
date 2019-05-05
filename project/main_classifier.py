@@ -3,7 +3,7 @@ Train classifier to predict class labels
 """
 
 import pprint
-from collections import OrderedDict, Counter
+from collections import OrderedDict
 
 import numpy as np
 import torch.nn as nn
@@ -27,15 +27,17 @@ def create_dataset(pd_frame, max_seq_length, ratio_threshold=1.01):
     done = False
     while not done:
         close_ratio, news = obs
+        news = news.reshape(news.shape[0], -1)
         observation.append(news)
         labels.append(close_ratio)
         action = env.action_space.sample()
         obs, _, done, _ = env.step(action)
     observation = observation[:-1]
-    labels = labels[1:]
+    labels = np.array(labels[1:])
     observation = np.stack(observation, axis=0)
     normalized_ratio = (ratio_threshold - 1.0) * 100
-    labels = np.digitize(labels, bins=[-np.inf, -normalized_ratio, normalized_ratio, np.inf]) - 1
+    # labels = np.digitize(labels, bins=[-np.inf, -normalized_ratio, normalized_ratio, np.inf]) - 1
+    labels = labels > 0
     labels = labels.astype(np.int32)
     return observation, labels
 
@@ -72,7 +74,7 @@ if __name__ == '__main__':
     print('Number of neutral {}'.format(np.sum(train_labels == 1) / np.prod(train_labels.shape)))
     print('Number of positive {}'.format(np.sum(train_labels == 2) / np.prod(train_labels.shape)))
 
-    model = NewsPredictorModule(seq_length=max_seq_length, freeze_embedding=args['freeze_embedding'])
+    model = NewsPredictorModule(seq_length=max_seq_length * 25, freeze_embedding=args['freeze_embedding'])
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args['learning_rate'])
 
